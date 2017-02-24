@@ -33,8 +33,8 @@ RUN set -x && \
     python-setuptools && \
 
 #Add user
-    mkdir -p /data/{www,phpext} && \
-    useradd -r -s /sbin/nologin -d /data/www -m -k no www && \
+    mkdir -p /var/www/{html,phpext} && \
+    useradd -r -s /sbin/nologin -d /var/www/html -m -k no www && \
 
 #Download nginx & php
     mkdir -p /home/nginx-php && cd $_ && \
@@ -108,6 +108,12 @@ RUN set -x && \
     cp /usr/local/php/etc/php-fpm.conf.default /usr/local/php/etc/php-fpm.conf && \
     cp /usr/local/php/etc/php-fpm.d/www.conf.default /usr/local/php/etc/php-fpm.d/www.conf && \
 
+# Changing php-fpm configureations
+   sed -i 's/listen = .*/listen = \/var\/run\/php-fpm-www.sock/' /usr/local/php/etc/php-fpm.d/www.conf
+   sed -i 's/;listen.owner = www/listen.owner = www/' /usr/local/php/etc/php-fpm.d/www.conf
+   sed -i 's/;listen.group = www/listen.group = www/' /usr/local/php/etc/php-fpm.d/www.conf
+   sed -i 's/;listen.mode = 0660/listen.mode = 0660/' /usr/local/php/etc/php-fpm.d/www.conf
+
 #Install supervisor
     easy_install supervisor && \
     mkdir -p /var/{log/supervisor,run/{sshd,supervisord}} && \
@@ -127,18 +133,18 @@ RUN set -x && \
     rm -rf /home/nginx-php && \
 
 #Change Mod from webdir
-    chown -R www:www /data/www
+    chown -R www:www /var/www/html
 
 #Add supervisord conf
 ADD supervisord.conf /etc/
 
 #Create web folder
-VOLUME ["/data/www", "/usr/local/nginx/conf/ssl", "/usr/local/nginx/conf/vhost", "/usr/local/php/etc/php.d", "/data/phpext"]
+VOLUME ["/var/www/html", "/usr/local/nginx/conf/ssl", "/usr/local/nginx/conf/vhost", "/usr/local/php/etc/php.d", "/var/www/phpext"]
 
-ADD index.php /data/www/
+ADD index.php /var/www/html
 
 ADD extini/ /usr/local/php/etc/php.d/
-ADD extfile/ /data/phpext/
+ADD extfile/ /var/www/phpext/
 
 #Update nginx config
 ADD nginx.conf /usr/local/nginx/conf/
@@ -155,3 +161,6 @@ ENTRYPOINT ["/start.sh"]
 
 #Start web server
 #CMD ["/bin/bash", "/start.sh"]
+
+# Setting working directory
+WORKDIR /var/www/html
