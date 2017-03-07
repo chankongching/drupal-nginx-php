@@ -160,17 +160,19 @@ ADD extfile/ /var/www/phpext/
 ADD nginx.conf /usr/local/nginx/conf/
 
 #Start
-ADD start.sh /
-RUN chmod +x /start.sh
+ADD startup.sh /var/www/startup.sh
+RUN chmod +x /var/www/startup.sh
+
+ENV PATH /usr/local/php/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
 
 #Set port
 EXPOSE 80 443
 
 #Start it
-ENTRYPOINT ["/start.sh"]
+ENTRYPOINT ["/var/www/startup.sh"]
 
 #Start web server
-#CMD ["/bin/bash", "/start.sh"]
+#CMD ["/bin/bash", "/startup.sh"]
 
 # Setting working directory
 WORKDIR /var/www/html
