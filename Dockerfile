@@ -32,6 +32,7 @@ RUN set -x && \
     libmcrypt-devel \
     openssh-server \
     python-setuptools && \
+    mysql && \
 
 #Add user
     mkdir -p /var/www/{html,phpext} && \
@@ -148,22 +149,29 @@ RUN set -x && \
 #Add supervisord conf
 ADD supervisord.conf /etc/
 
-#Create web folder
+#Create web folder,mysql folder
 VOLUME ["/var/www/html", "/usr/local/nginx/conf/ssl", "/usr/local/nginx/conf/vhost", "/usr/local/php/etc/php.d", "/var/www/phpext"]
 
 ADD index.php /var/www/html
 
-ADD extini/ /usr/local/php/etc/php.d/
 ADD extfile/ /var/www/phpext/
 
 #Update nginx config
 ADD nginx.conf /usr/local/nginx/conf/
+
 
 #Start
 ADD startup.sh /var/www/startup.sh
 RUN chmod +x /var/www/startup.sh
 
 ENV PATH /usr/local/php/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+
+RUN set -x && \
+    curl -sS https://getcomposer.org/installer | php && \
+    mv composer.phar /usr/local/bin/composer && \
+    composer global require drush/drush:~8 && \
+    sed -i '1i export PATH="$HOME/.composer/vendor/drush/drush:$PATH"' $HOME/.bashrc && \
+    source $HOME/.bashrc 
 
 #Set port
 EXPOSE 80 443
