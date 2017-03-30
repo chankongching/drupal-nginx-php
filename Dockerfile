@@ -31,7 +31,7 @@ RUN set -x && \
     freetype-devel \
     libmcrypt-devel \
     openssh-server \
-    python-setuptools && \
+    python-setuptools \
     mysql && \
 
 #Add user
@@ -159,6 +159,8 @@ ADD extfile/ /var/www/phpext/
 #Update nginx config
 ADD nginx.conf /usr/local/nginx/conf/
 
+ADD ./scripts/docker-entrypoint.sh /docker-entrypoint.sh
+ADD ./scripts/docker-install.sh /docker-install.sh
 
 #Start
 ADD startup.sh /var/www/startup.sh
@@ -173,6 +175,8 @@ RUN set -x && \
     sed -i '1i export PATH="$HOME/.composer/vendor/drush/drush:$PATH"' $HOME/.bashrc && \
     source $HOME/.bashrc 
 
+#RUN chmod +x /docker-entrypoint.sh
+RUN chmod +x /docker-install.sh
 #Set port
 EXPOSE 80 443
 

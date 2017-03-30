@@ -4,6 +4,6 @@ DATA_DIR=/var/www/html
 
 set -e
 chown -R www.www $DATA_DIR
-/docker-entrypoint.sh
+#/docker-entrypoint.sh
 
 /usr/bin/supervisord -n -c /etc/supervisord.conf
