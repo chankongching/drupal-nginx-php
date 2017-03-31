@@ -18,6 +18,7 @@ RUN set -x && \
     rpm -ivh http://dl.fedoraproject.org/pub/epel/6/i386/epel-release-6-8.noarch.rpm && \
     yum install -y zlib \
     zlib-devel \
+    re2c \
     openssl \
     openssl-devel \
     pcre-devel \
@@ -30,7 +31,8 @@ RUN set -x && \
     freetype-devel \
     libmcrypt-devel \
     openssh-server \
-    python-setuptools && \
+    python-setuptools \
+    mysql && \
 
 #Add user
     mkdir -p /var/www/{html,phpext} && \
@@ -108,11 +110,16 @@ RUN set -x && \
     cp /usr/local/php/etc/php-fpm.conf.default /usr/local/php/etc/php-fpm.conf && \
     cp /usr/local/php/etc/php-fpm.d/www.conf.default /usr/local/php/etc/php-fpm.d/www.conf && \
 
+# Changing php.ini
+   sed -i 's/memory_limit = .*/memory_limit = 512M/' /usr/local/php/etc/php.ini && \
+   sed -i 's/upload_max_filesize = .*/upload_max_filesize = 20M/' /usr/local/php/etc/php.ini && \
+   sed -i 's/post_max_size = .*/post_max_size = 80M/' /usr/local/php/etc/php.ini && \
+
 # Changing php-fpm configureations
-   sed -i 's/listen = .*/listen = \/var\/run\/php-fpm-www.sock/' /usr/local/php/etc/php-fpm.d/www.conf
-   sed -i 's/;listen.owner = www/listen.owner = www/' /usr/local/php/etc/php-fpm.d/www.conf
-   sed -i 's/;listen.group = www/listen.group = www/' /usr/local/php/etc/php-fpm.d/www.conf
-   sed -i 's/;listen.mode = 0660/listen.mode = 0660/' /usr/local/php/etc/php-fpm.d/www.conf
+   sed -i 's/listen = .*/listen = \/var\/run\/php-fpm-www.sock/' /usr/local/php/etc/php-fpm.d/www.conf && \
+   sed -i 's/;listen.owner = www/listen.owner = www/' /usr/local/php/etc/php-fpm.d/www.conf && \
+   sed -i 's/;listen.group = www/listen.group = www/' /usr/local/php/etc/php-fpm.d/www.conf && \
+   sed -i 's/;listen.mode = 0660/listen.mode = 0660/' /usr/local/php/etc/php-fpm.d/www.conf && \
 
 #Install supervisor
     easy_install supervisor && \
@@ -132,35 +139,52 @@ RUN set -x && \
     find /var/log -type f -delete && \
     rm -rf /home/nginx-php && \
 
+# Chaning timezone
+    unlink /etc/localtime && \
+    ln -s /usr/share/zoneinfo/Asia/Shanghai /etc/localtime && \
+
 #Change Mod from webdir
     chown -R www:www /var/www/html
 
 #Add supervisord conf
 ADD supervisord.conf /etc/
 
-#Create web folder
+#Create web folder,mysql folder
 VOLUME ["/var/www/html", "/usr/local/nginx/conf/ssl", "/usr/local/nginx/conf/vhost", "/usr/local/php/etc/php.d", "/var/www/phpext"]
 
 ADD index.php /var/www/html
 
-ADD extini/ /usr/local/php/etc/php.d/
 ADD extfile/ /var/www/phpext/
 
 #Update nginx config
 ADD nginx.conf /usr/local/nginx/conf/
 
-#Start
-ADD start.sh /
-RUN chmod +x /start.sh
+ADD ./scripts/docker-entrypoint.sh /docker-entrypoint.sh
+ADD ./scripts/docker-install.sh /docker-install.sh
 
+#Start
+ADD startup.sh /var/www/startup.sh
+RUN chmod +x /var/www/startup.sh
+
+ENV PATH /usr/local/php/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+
+RUN set -x && \
+    curl -sS https://getcomposer.org/installer | php && \
+    mv composer.phar /usr/local/bin/composer && \
+    composer global require drush/drush:~8 && \
+    sed -i '1i export PATH="$HOME/.composer/vendor/drush/drush:$PATH"' $HOME/.bashrc && \
+    source $HOME/.bashrc 
+
+#RUN chmod +x /docker-entrypoint.sh
+RUN chmod +x /docker-install.sh
 #Set port
 EXPOSE 80 443
 
 #Start it
-ENTRYPOINT ["/start.sh"]
+ENTRYPOINT ["/var/www/startup.sh"]
 
 #Start web server
-#CMD ["/bin/bash", "/start.sh"]
+#CMD ["/bin/bash", "/startup.sh"]
 
 # Setting working directory
 WORKDIR /var/www/html
