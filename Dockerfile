@@ -2,16 +2,28 @@ FROM centos:7
 MAINTAINER Skiychan <dev@skiy.net>
 
 ENV NGINX_VERSION 1.11.6
-ENV PHP_VERSION 7.1.0
+ENV PHP_VERSION 7.1.3
 
 RUN set -x && \
     yum install -y gcc \
+    cyrus-sasl-devel \
+    unzip \
+    wget \
     gcc-c++ \
     autoconf \
     automake \
     libtool \
     make \
     cmake && \
+
+# Get the latest libmemcached
+    cd /root && \
+    wget https://launchpad.net/libmemcached/1.0/1.0.18/+download/libmemcached-1.0.18.tar.gz && \
+    tar -xvf libmemcached-1.0.18.tar.gz && \
+    cd libmemcached-1.0.18 && \
+    ./configure --disable-memcached-sasl && \
+    make && \
+    make install && \
 
 #Install PHP library
 ## libmcrypt-devel DIY
@@ -78,6 +90,7 @@ RUN set -x && \
     --with-freetype-dir \
     --with-xmlrpc \
     --with-mhash \
+    --with-memcached \
     --enable-fpm \
     --enable-xml \
     --enable-shmop \
@@ -109,6 +122,19 @@ RUN set -x && \
     cp php.ini-production /usr/local/php/etc/php.ini && \
     cp /usr/local/php/etc/php-fpm.conf.default /usr/local/php/etc/php-fpm.conf && \
     cp /usr/local/php/etc/php-fpm.d/www.conf.default /usr/local/php/etc/php-fpm.d/www.conf && \
+
+#Enable memcache
+    mkdir -p /usr/local/src/php-memcache && \
+    cd /usr/local/src/php-memcache && \
+    wget https://github.com/php-memcached-dev/php-memcached/archive/php7.zip && \
+    unzip php7.zip && \
+    cd php-memcached-php7 && \
+    /usr/local/php/bin/phpize && \
+    ./configure --with-php-config=/usr/local/php/bin/php-config && \
+    # --disable-memcached-sasl && \
+    make && \
+    make install && \
+    echo "extension=memcached.so" >> /usr/local/php/etc/php.ini && \
 
 # Changing php.ini
    sed -i 's/memory_limit = .*/memory_limit = 512M/' /usr/local/php/etc/php.ini && \
@@ -174,6 +200,8 @@ RUN set -x && \
     composer global require drush/drush:~8 && \
     sed -i '1i export PATH="$HOME/.composer/vendor/drush/drush:$PATH"' $HOME/.bashrc && \
     source $HOME/.bashrc 
+
+RUN yum install -y which
 
 #RUN chmod +x /docker-entrypoint.sh
 #RUN chmod +x /docker-install.sh
