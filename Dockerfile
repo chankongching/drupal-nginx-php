@@ -116,14 +116,13 @@ RUN set -x && \
     --without-pear && \
     make && make install && \
 
-
 #Install php-fpm
     cd /home/nginx-php/php-$PHP_VERSION && \
     cp php.ini-production /usr/local/php/etc/php.ini && \
     cp /usr/local/php/etc/php-fpm.conf.default /usr/local/php/etc/php-fpm.conf && \
     cp /usr/local/php/etc/php-fpm.d/www.conf.default /usr/local/php/etc/php-fpm.d/www.conf && \
 
-#Enable memcache
+# Enable memcache
     mkdir -p /usr/local/src/php-memcache && \
     cd /usr/local/src/php-memcache && \
     wget https://github.com/php-memcached-dev/php-memcached/archive/php7.zip && \
@@ -136,16 +135,30 @@ RUN set -x && \
     make install && \
     echo "extension=memcached.so" >> /usr/local/php/etc/php.ini && \
 
+# Enable redis
+    cd /root && \
+    wget https://github.com/phpredis/phpredis/archive/php7.zip -O phpredis.zip && \
+    #wget https://github.com/phpredis/phpredis/archive/master.zip -O phpredis.zip && \
+    unzip -o /root/phpredis.zip && \
+    mv /root/phpredis-* /root/phpredis && \ 
+    cd /root/phpredis && \
+    /usr/local/php/bin/phpize && \
+    ./configure && \ 
+    make && \ 
+    make install && \
+    touch /usr/local/php/etc/php.d/redis.ini && \
+    echo extension=redis.so > /usr/local/php/etc/php.d/redis.ini && \
+
 # Changing php.ini
-   sed -i 's/memory_limit = .*/memory_limit = 512M/' /usr/local/php/etc/php.ini && \
-   sed -i 's/upload_max_filesize = .*/upload_max_filesize = 20M/' /usr/local/php/etc/php.ini && \
-   sed -i 's/post_max_size = .*/post_max_size = 80M/' /usr/local/php/etc/php.ini && \
+    sed -i 's/memory_limit = .*/memory_limit = 512M/' /usr/local/php/etc/php.ini && \
+    sed -i 's/upload_max_filesize = .*/upload_max_filesize = 20M/' /usr/local/php/etc/php.ini && \
+    sed -i 's/post_max_size = .*/post_max_size = 80M/' /usr/local/php/etc/php.ini && \
 
 # Changing php-fpm configureations
-   sed -i 's/listen = .*/listen = \/var\/run\/php-fpm-www.sock/' /usr/local/php/etc/php-fpm.d/www.conf && \
-   sed -i 's/;listen.owner = www/listen.owner = www/' /usr/local/php/etc/php-fpm.d/www.conf && \
-   sed -i 's/;listen.group = www/listen.group = www/' /usr/local/php/etc/php-fpm.d/www.conf && \
-   sed -i 's/;listen.mode = 0660/listen.mode = 0660/' /usr/local/php/etc/php-fpm.d/www.conf && \
+    sed -i 's/listen = .*/listen = \/var\/run\/php-fpm-www.sock/' /usr/local/php/etc/php-fpm.d/www.conf && \
+    sed -i 's/;listen.owner = www/listen.owner = www/' /usr/local/php/etc/php-fpm.d/www.conf && \
+    sed -i 's/;listen.group = www/listen.group = www/' /usr/local/php/etc/php-fpm.d/www.conf && \
+    sed -i 's/;listen.mode = 0660/listen.mode = 0660/' /usr/local/php/etc/php-fpm.d/www.conf && \
 
 #Install supervisor
     easy_install supervisor && \
