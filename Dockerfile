@@ -143,11 +143,10 @@ RUN set -x && \
     mv /root/phpredis-* /root/phpredis && \ 
     cd /root/phpredis && \
     /usr/local/php/bin/phpize && \
-    ./configure && \ 
+    ./configure --with-php-config=/usr/local/php/bin/php-config && \ 
     make && \ 
     make install && \
-    touch /usr/local/php/etc/php.d/redis.ini && \
-    echo extension=redis.so > /usr/local/php/etc/php.d/redis.ini && \
+    echo extension=redis.so > /usr/local/php/etc/php.ini && \
 
 # Changing php.ini
     sed -i 's/memory_limit = .*/memory_limit = 512M/' /usr/local/php/etc/php.ini && \
