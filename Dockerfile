@@ -14,19 +14,21 @@ RUN set -x && \
     automake \
     libtool \
     make \
-    cmake && \
+    cmake
 
 # Get the latest libmemcached
+RUN set -x && \
     cd /root && \
     wget https://launchpad.net/libmemcached/1.0/1.0.18/+download/libmemcached-1.0.18.tar.gz && \
     tar -xvf libmemcached-1.0.18.tar.gz && \
     cd libmemcached-1.0.18 && \
     ./configure --disable-memcached-sasl && \
     make && \
-    make install && \
+    make install
 
 #Install PHP library
 ## libmcrypt-devel DIY
+RUN set -x && \
     rpm -ivh http://dl.fedoraproject.org/pub/epel/6/i386/epel-release-6-8.noarch.rpm && \
     yum install -y zlib \
     zlib-devel \
@@ -44,18 +46,20 @@ RUN set -x && \
     libmcrypt-devel \
     openssh-server \
     python-setuptools \
-    mysql && \
+    mysql
 
 #Add user
+RUN set -x && \
     mkdir -p /var/www/{html,phpext} && \
     useradd -r -s /sbin/nologin -d /var/www/html -m -k no www && \
 
 #Download nginx & php
     mkdir -p /home/nginx-php && cd $_ && \
     curl -Lk http://nginx.org/download/nginx-$NGINX_VERSION.tar.gz | gunzip | tar x -C /home/nginx-php && \
-    curl -Lk http://php.net/distributions/php-$PHP_VERSION.tar.gz | gunzip | tar x -C /home/nginx-php && \
+    curl -Lk http://php.net/distributions/php-$PHP_VERSION.tar.gz | gunzip | tar x -C /home/nginx-php
 
 #Make install nginx
+RUN set -x && \
     cd /home/nginx-php/nginx-$NGINX_VERSION && \
     ./configure --prefix=/usr/local/nginx \
     --user=www --group=www \
@@ -67,9 +71,10 @@ RUN set -x && \
     --without-mail_pop3_module \
     --without-mail_imap_module \
     --with-http_gzip_static_module && \
-    make && make install && \
+    make && make install
 
 #Make install php
+RUN set -x && \
     cd /home/nginx-php/php-$PHP_VERSION && \
     ./configure --prefix=/usr/local/php \
     --with-config-file-path=/usr/local/php/etc \
@@ -115,15 +120,17 @@ RUN set -x && \
     --enable-ipv6 \
     --disable-debug \
     --without-pear && \
-    make && make install && \
+    make && make install
 
 #Install php-fpm
+RUN set -x && \
     cd /home/nginx-php/php-$PHP_VERSION && \
     cp php.ini-production /usr/local/php/etc/php.ini && \
     cp /usr/local/php/etc/php-fpm.conf.default /usr/local/php/etc/php-fpm.conf && \
-    cp /usr/local/php/etc/php-fpm.d/www.conf.default /usr/local/php/etc/php-fpm.d/www.conf && \
+    cp /usr/local/php/etc/php-fpm.d/www.conf.default /usr/local/php/etc/php-fpm.d/www.conf
 
 # Enable memcache
+RUN set -x && \
     mkdir -p /usr/local/src/php-memcache && \
     cd /usr/local/src/php-memcache && \
     wget https://github.com/php-memcached-dev/php-memcached/archive/php7.zip && \
@@ -134,37 +141,43 @@ RUN set -x && \
     # --disable-memcached-sasl && \
     make && \
     make install && \
-    echo "extension=memcached.so" >> /usr/local/php/etc/php.ini && \
+    echo "extension=memcached.so" >> /usr/local/php/etc/php.ini
 
 # Enable redis
+RUN set -x && \
     cd /root && \
     wget https://github.com/phpredis/phpredis/archive/php7.zip -O phpredis.zip && \
     #wget https://github.com/phpredis/phpredis/archive/master.zip -O phpredis.zip && \
     unzip -o /root/phpredis.zip && \
-    mv /root/phpredis-* /root/phpredis && \ 
+    mv /root/phpredis-* /root/phpredis && \
     cd /root/phpredis && \
     /usr/local/php/bin/phpize && \
-    ./configure --with-php-config=/usr/local/php/bin/php-config && \ 
-    make && \ 
+    ./configure --with-php-config=/usr/local/php/bin/php-config && \
+    make && \
     make install && \
-    echo extension=redis.so > /usr/local/php/etc/php.ini && \
+    echo extension=redis.so >> /usr/local/php/etc/php.ini
 
 # Changing php.ini
+RUN set -x && \
     sed -i 's/memory_limit = .*/memory_limit = 512M/' /usr/local/php/etc/php.ini && \
     sed -i 's/upload_max_filesize = .*/upload_max_filesize = 20M/' /usr/local/php/etc/php.ini && \
     sed -i 's/post_max_size = .*/post_max_size = 80M/' /usr/local/php/etc/php.ini && \
 
+
 # Changing php-fpm configureations
+RUN set -x && \
     sed -i 's/listen = .*/listen = \/var\/run\/php-fpm-www.sock/' /usr/local/php/etc/php-fpm.d/www.conf && \
     sed -i 's/;listen.owner = www/listen.owner = www/' /usr/local/php/etc/php-fpm.d/www.conf && \
     sed -i 's/;listen.group = www/listen.group = www/' /usr/local/php/etc/php-fpm.d/www.conf && \
-    sed -i 's/;listen.mode = 0660/listen.mode = 0660/' /usr/local/php/etc/php-fpm.d/www.conf && \
+    sed -i 's/;listen.mode = 0660/listen.mode = 0660/' /usr/local/php/etc/php-fpm.d/www.conf
 
 #Install supervisor
+RUN set -x && \
     easy_install supervisor && \
-    mkdir -p /var/{log/supervisor,run/{sshd,supervisord}} && \
+    mkdir -p /var/{log/supervisor,run/{sshd,supervisord}}
 
 #Clean OS
+RUN set -x && \
     yum remove -y gcc \
     gcc-c++ \
     autoconf \
@@ -176,16 +189,18 @@ RUN set -x && \
     rm -rf /tmp/* /var/cache/{yum,ldconfig} /etc/my.cnf{,.d} && \
     mkdir -p --mode=0755 /var/cache/{yum,ldconfig} && \
     find /var/log -type f -delete && \
-    rm -rf /home/nginx-php && \
+    rm -rf /home/nginx-php
 
 # Chaning timezone
+RUN set -x && \
     unlink /etc/localtime && \
-    ln -s /usr/share/zoneinfo/Asia/Shanghai /etc/localtime && \
+    ln -s /usr/share/zoneinfo/Asia/Shanghai /etc/localtime
 
 #Change Mod from webdir
+RUN set -x && \
     chown -R www:www /var/www/html
 
-#Add supervisord conf
+# Insert supervisord conf file
 ADD supervisord.conf /etc/
 
 #Create web folder,mysql folder
@@ -212,7 +227,7 @@ RUN set -x && \
     mv composer.phar /usr/local/bin/composer && \
     composer global require drush/drush:~8 && \
     sed -i '1i export PATH="$HOME/.composer/vendor/drush/drush:$PATH"' $HOME/.bashrc && \
-    source $HOME/.bashrc 
+    source $HOME/.bashrc
 
 RUN yum install -y which
 
