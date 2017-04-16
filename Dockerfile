@@ -250,6 +250,7 @@ ADD nginx.conf /usr/local/nginx/conf/
 ADD startup.sh /var/www/startup.sh
 RUN chmod +x /var/www/startup.sh
 
+RUN find / -name oci8.so -print
 ENV PATH /usr/local/php/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
 
 RUN set -x && \
