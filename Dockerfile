@@ -198,6 +198,7 @@ RUN ln -s /usr/local/instantclient_11_2 /usr/local/instantclient
 RUN ln -s /usr/local/instantclient/libclntsh.so.11.1 /usr/local/instantclient/libclntsh.so
 RUN ln -s /usr/local/instantclient/sqlplus /usr/bin/sqlplus
 
+RUN find / -name pecl -print
 RUN echo 'instantclient,/usr/local/instantclient' | pecl install oci8
 RUN echo "extension=oci8.so" >> /usr/local/php/etc/php.ini
 
