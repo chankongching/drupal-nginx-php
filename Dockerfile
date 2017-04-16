@@ -180,6 +180,27 @@ RUN set -x && \
     sed -i 's/;listen.group = www/listen.group = www/' /usr/local/php/etc/php-fpm.d/www.conf && \
     sed -i 's/;listen.mode = 0660/listen.mode = 0660/' /usr/local/php/etc/php-fpm.d/www.conf
 
+# install OCI support
+RUN set -x && \
+    cd /root && \
+    wget https://pear.php.net/go-pear.phar && \
+    /usr/local/php/bin/php go-pear.phar
+
+# Oracle instantclient
+ADD oracle/instantclient-basic-linux.x64-11.2.0.4.0.zip /tmp/instantclient-basic-linux.x64-11.2.0.4.0.zip
+ADD oracle/instantclient-sdk-linux.x64-11.2.0.4.0.zip /tmp/instantclient-sdk-linux.x64-11.2.0.4.0.zip
+ADD oracle/instantclient-sqlplus-linux.x64-11.2.0.4.0.zip /tmp/instantclient-sqlplus-linux.x64-11.2.0.4.0.zip
+
+RUN unzip /tmp/instantclient-basic-linux.x64-11.2.0.4.0.zip -d /usr/local/
+RUN unzip /tmp/instantclient-sdk-linux.x64-11.2.0.4.0.zip -d /usr/local/
+RUN unzip /tmp/instantclient-sqlplus-linux.x64-11.2.0.4.0.zip -d /usr/local/
+RUN ln -s /usr/local/instantclient_11_2 /usr/local/instantclient
+RUN ln -s /usr/local/instantclient/libclntsh.so.11.1 /usr/local/instantclient/libclntsh.so
+RUN ln -s /usr/local/instantclient/sqlplus /usr/bin/sqlplus
+
+RUN echo 'instantclient,/usr/local/instantclient' | pecl install oci8
+RUN echo "extension=oci8.so" >> /usr/local/php/etc/php.ini
+
 #Install supervisor
 RUN set -x && \
     easy_install supervisor && \
