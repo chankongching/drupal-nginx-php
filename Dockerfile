@@ -159,7 +159,7 @@ RUN set -x && \
 
 # Changing php.ini
 RUN set -x && \
-    sed -i 's/memory_limit = .*/memory_limit = 512M/' /usr/local/php/etc/php.ini && \
+    sed -i 's/memory_limit = .*/memory_limit = 1024M/' /usr/local/php/etc/php.ini && \
     sed -i 's/upload_max_filesize = .*/upload_max_filesize = 20M/' /usr/local/php/etc/php.ini && \
     sed -i 's/post_max_size = .*/post_max_size = 80M/' /usr/local/php/etc/php.ini
 
