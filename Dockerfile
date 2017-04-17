@@ -1,8 +1,8 @@
 FROM centos:7
-MAINTAINER Skiychan <dev@skiy.net>
+MAINTAINER chankongching <chankongching@gmail.com>
 
 ENV NGINX_VERSION 1.11.6
-ENV PHP_VERSION 7.0.17
+ENV PHP_VERSION 7.1.4
 
 RUN set -x && \
     yum install -y gcc \
@@ -159,7 +159,7 @@ RUN set -x && \
 
 # Changing php.ini
 RUN set -x && \
-    sed -i 's/memory_limit = .*/memory_limit = 512M/' /usr/local/php/etc/php.ini && \
+    sed -i 's/memory_limit = .*/memory_limit = 1024M/' /usr/local/php/etc/php.ini && \
     sed -i 's/upload_max_filesize = .*/upload_max_filesize = 20M/' /usr/local/php/etc/php.ini && \
     sed -i 's/post_max_size = .*/post_max_size = 80M/' /usr/local/php/etc/php.ini
 
