@@ -240,6 +240,8 @@ RUN set -x && \
 
 RUN yum install -y which
 
+ADD opcache.so /usr/local/php/lib/php/extensions/no-debug-non-zts-20160303/opcache.so
+
 #RUN chmod +x /docker-entrypoint.sh
 #RUN chmod +x /docker-install.sh
 #Set port
