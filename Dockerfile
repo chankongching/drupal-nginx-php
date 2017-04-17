@@ -160,8 +160,10 @@ RUN set -x && \
 # Changing php.ini
 RUN set -x && \
     sed -i 's/memory_limit = .*/memory_limit = 1024M/' /usr/local/php/etc/php.ini && \
-    sed -i 's/upload_max_filesize = .*/upload_max_filesize = 20M/' /usr/local/php/etc/php.ini && \
-    sed -i 's/post_max_size = .*/post_max_size = 80M/' /usr/local/php/etc/php.ini
+    sed -i 's/post_max_size = .*/post_max_size = 32M/' /usr/local/php/etc/php.ini && \
+    sed -i 's/upload_max_filesize = .*/upload_max_filesize = 32M/' /usr/local/php/etc/php.ini && \
+    sed -i 's/post_max_size = .*/post_max_size = 32M/' /usr/local/php/etc/php.ini && \
+    sed -i 's/^; max_input_vars =.*/max_input_vars =10000/' /usr/local/php/etc/php.ini
 
 # Enable opcache php.ini
 RUN set -x && \
