@@ -1,5 +1,5 @@
 FROM centos:7
-MAINTAINER Skiychan <dev@skiy.net>
+MAINTAINER chankongching <chankongching@gmail.com>
 
 ENV NGINX_VERSION 1.11.6
 ENV PHP_VERSION 7.0.17
