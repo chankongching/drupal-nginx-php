@@ -243,6 +243,9 @@ RUN set -x && \
 
 RUN yum install -y which
 
+RUN rpm -Uvh http://yum.newrelic.com/pub/newrelic/el5/x86_64/newrelic-repo-5-3.noarch.rpm
+RUN yum install -y yum install newrelic-php5
+
 #RUN chmod +x /docker-entrypoint.sh
 #RUN chmod +x /docker-install.sh
 #Set port
