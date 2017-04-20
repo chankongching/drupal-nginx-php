@@ -164,7 +164,9 @@ RUN set -x && \
     sed -i 's/upload_max_filesize = .*/upload_max_filesize = 32M/' /usr/local/php/etc/php.ini && \
     sed -i 's/post_max_size = .*/post_max_size = 32M/' /usr/local/php/etc/php.ini && \
     sed -i 's/^; max_input_vars =.*/max_input_vars =10000/' /usr/local/php/etc/php.ini && \
-    echo zend_extension=opcache.so >> /usr/local/php/etc/php.ini
+    echo zend_extension=opcache.so >> /usr/local/php/etc/php.ini && \
+    echo cgi.fix_pathinfo = 0;
+    sed -i 's/^;cgi.fix_pathinfo =.*/cgi.fix_pathinfo = 0;/' /usr/local/php/etc/php.ini
 
 # Enable opcache php.ini
 RUN set -x && \
