@@ -146,7 +146,7 @@ RUN set -x && \
 # Enable redis
 RUN set -x && \
     cd /root && \
-    wget https://github.com/phpredis/phpredis/archive/php7.zip -O phpredis.zip && \
+    wget https://github.com/phpredis/phpredis/archive/3.1.4.zip -O phpredis.zip && \
     #wget https://github.com/phpredis/phpredis/archive/master.zip -O phpredis.zip && \
     unzip -o /root/phpredis.zip && \
     mv /root/phpredis-* /root/phpredis && \
