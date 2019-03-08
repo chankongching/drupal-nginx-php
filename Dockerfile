@@ -97,6 +97,7 @@ RUN set -x && \
     --with-freetype-dir \
     --with-xmlrpc \
     --with-mhash \
+    --with-gettext \
     --with-memcached \
     --with-exif \
     --enable-bcmath \
@@ -191,14 +192,23 @@ RUN set -x && \
     easy_install supervisor && \
     mkdir -p /var/{log/supervisor,run/{sshd,supervisord}}
 
-# Start installing php extension
-RUN set -x && \
-    yum install -y https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm 
+ENV PATH /usr/local/php/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
 
+# Install PEAR
 RUN set -x && \
-    yum install -y libmcrypt-devel && \
-    pecl install mcrypt exif gettext igbinary pcntl && \
-    
+    wget http://pear.php.net/go-pear.phar && \
+    php go-pear.phar
+
+
+# Run prerequisite
+RUN yum install -y libmcrypt-devel
+
+
+# Update pecl
+RUN /usr/local/php/bin/pecl channel-update pecl.php.net
+
+# Use pecl
+RUN /usr/local/php/bin/pecl install mcrypt-1.0.2 igbinary pcntl 
 
 #Clean OS
 RUN set -x && \
@@ -243,8 +253,6 @@ ADD nginx.conf /usr/local/nginx/conf/
 #Start
 ADD startup.sh /var/www/startup.sh
 RUN chmod +x /var/www/startup.sh
-
-ENV PATH /usr/local/php/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
 
 RUN set -x && \
     curl -sS https://getcomposer.org/installer | php && \
