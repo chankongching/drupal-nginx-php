@@ -1,8 +1,9 @@
 FROM centos:7
 MAINTAINER chankongching <chankongching@gmail.com>
 
-ENV NGINX_VERSION 1.12.2
-ENV PHP_VERSION 7.1.11
+ENV NGINX_VERSION 1.15.9
+ENV PHP_VERSION 7.2.16
+ENV REDIS_VERSION 4.3.0RC2
 
 RUN set -x && \
     yum install -y gcc \
@@ -56,7 +57,8 @@ RUN set -x && \
 #Download nginx & php
     mkdir -p /home/nginx-php && cd $_ && \
     curl -Lk http://nginx.org/download/nginx-$NGINX_VERSION.tar.gz | gunzip | tar x -C /home/nginx-php && \
-    curl -Lk http://php.net/distributions/php-$PHP_VERSION.tar.gz | gunzip | tar x -C /home/nginx-php
+    curl -Lk http://hk1.php.net/distributions/php-$PHP_VERSION.tar.gz | gunzip | tar x -C /home/nginx-php
+#    curl -Lk http://php.net/distributions/php-$PHP_VERSION.tar.gz | gunzip | tar x -C /home/nginx-php
 
 #Make install nginx
 RUN set -x && \
@@ -96,6 +98,7 @@ RUN set -x && \
     --with-xmlrpc \
     --with-mhash \
     --with-memcached \
+    --with-exif \
     --enable-bcmath \
     --enable-fpm \
     --enable-xml \
@@ -146,7 +149,7 @@ RUN set -x && \
 # Enable redis
 RUN set -x && \
     cd /root && \
-    wget https://github.com/phpredis/phpredis/archive/3.1.4.zip -O phpredis.zip && \
+    wget https://github.com/phpredis/phpredis/archive/$REDIS_VERSION.zip -O phpredis.zip && \
     #wget https://github.com/phpredis/phpredis/archive/master.zip -O phpredis.zip && \
     unzip -o /root/phpredis.zip && \
     mv /root/phpredis-* /root/phpredis && \
@@ -160,9 +163,9 @@ RUN set -x && \
 # Changing php.ini
 RUN set -x && \
     sed -i 's/memory_limit = .*/memory_limit = 1024M/' /usr/local/php/etc/php.ini && \
-    sed -i 's/post_max_size = .*/post_max_size = 32M/' /usr/local/php/etc/php.ini && \
-    sed -i 's/upload_max_filesize = .*/upload_max_filesize = 32M/' /usr/local/php/etc/php.ini && \
-    sed -i 's/post_max_size = .*/post_max_size = 32M/' /usr/local/php/etc/php.ini && \
+    sed -i 's/post_max_size = .*/post_max_size = 512M/' /usr/local/php/etc/php.ini && \
+    sed -i 's/upload_max_filesize = .*/upload_max_filesize = 512M/' /usr/local/php/etc/php.ini && \
+    sed -i 's/post_max_size = .*/post_max_size = 512M/' /usr/local/php/etc/php.ini && \
     sed -i 's/^; max_input_vars =.*/max_input_vars =10000/' /usr/local/php/etc/php.ini && \
     echo zend_extension=opcache.so >> /usr/local/php/etc/php.ini && \
     sed -i 's/^;cgi.fix_pathinfo =.*/cgi.fix_pathinfo = 0;/' /usr/local/php/etc/php.ini
@@ -242,10 +245,10 @@ RUN set -x && \
     sed -i '1i export PATH="$HOME/.composer/vendor/drush/drush:$PATH"' $HOME/.bashrc && \
     source $HOME/.bashrc
 
-RUN yum install -y which
+RUN yum install -y which telnet
 
-RUN rpm -Uvh http://yum.newrelic.com/pub/newrelic/el5/x86_64/newrelic-repo-5-3.noarch.rpm
-RUN yum install -y yum install newrelic-php5
+# RUN rpm -Uvh http://yum.newrelic.com/pub/newrelic/el5/x86_64/newrelic-repo-5-3.noarch.rpm
+# RUN yum install -y yum install newrelic-php5
 
 #RUN chmod +x /docker-entrypoint.sh
 #RUN chmod +x /docker-install.sh
