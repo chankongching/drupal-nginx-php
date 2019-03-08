@@ -121,8 +121,7 @@ RUN set -x && \
     --enable-fileinfo \
     --disable-rpath \
     --enable-ipv6 \
-    --disable-debug \
-    --without-pear && \
+    --disable-debug && \ 
     make && make install
 
 #Install php-fpm
@@ -191,6 +190,15 @@ RUN set -x && \
 RUN set -x && \
     easy_install supervisor && \
     mkdir -p /var/{log/supervisor,run/{sshd,supervisord}}
+
+# Start installing php extension
+RUN set -x && \
+    yum install -y https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm 
+
+RUN set -x && \
+    yum install -y libmcrypt-devel && \
+    pecl install mcrypt exif gettext igbinary pcntl && \
+    
 
 #Clean OS
 RUN set -x && \
