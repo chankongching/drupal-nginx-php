@@ -47,8 +47,9 @@ RUN set -x && \
     libmcrypt-devel \
     openssh-server \
     python-setuptools \
+    libxslt-devel* \
     mysql
-
+    
 #Add user
 RUN set -x && \
     mkdir -p /var/www/{html,phpext} && \
@@ -90,6 +91,7 @@ RUN set -x && \
     --with-gd \
     --with-iconv \
     --with-zlib \
+    --with-libexslt \
     --with-gettext \
     --with-curl \
     --with-png-dir \
@@ -100,17 +102,26 @@ RUN set -x && \
     --with-gettext \
     --with-memcached \
     --with-exif \
+    --with-wddx \
+    --with-igbinary \
+    --with-xsl \
+    --with-mcrypt \
     --enable-bcmath \
+    --enable-wddx \
     --enable-fpm \
     --enable-xml \
     --enable-shmop \
     --enable-sysvsem \
+    --enable-sysvmsg \
+    --enable-sysvshm \
+    --enable-xdebug \
     --enable-inline-optimization \
     --enable-mbregex \
     --enable-mbstring \
     --enable-ftp \
     --enable-gd-native-ttf \
     --enable-mysqlnd \
+    --enable-igbinary \
     --enable-pcntl \
     --enable-sockets \
     --enable-zip \
@@ -119,7 +130,9 @@ RUN set -x && \
     --enable-opcache \
     --enable-bcmath \
     --enable-exif \
+    --enable-xsl \
     --enable-fileinfo \
+    --enable-mcrypt \
     --disable-rpath \
     --enable-ipv6 \
     --disable-debug && \ 
@@ -202,13 +215,22 @@ RUN set -x && \
 
 # Run prerequisite
 RUN yum install -y libmcrypt-devel
-
+RUN yum  install -y  php-pear
 
 # Update pecl
 RUN /usr/local/php/bin/pecl channel-update pecl.php.net
-
+#RUN yum install libxslt-devel* -y
 # Use pecl
-RUN /usr/local/php/bin/pecl install mcrypt-1.0.2 igbinary pcntl 
+RUN /usr/local/php/bin/pecl install mcrypt-1.0.2 igbinary-3.0.0 pcntl-3.0.0 libxslt-devel*  php-xsl  php-mcrypt  xdebug-2.6.0 &&\
+    #  echo zend_extension=/usr/local/php/lib/php/extensions/no-debug-non-zts-20170718/xdebug.so >> /usr/local/php/etc/php.ini  &&\
+  echo zend_extension=xdebug.so >> /usr/local/php/etc/php.ini &&\
+  echo zend_extension=xsl.so >> /usr/local/php/etc/php.ini &&\
+  echo extension=igbinary.so  >> /usr/local/php/etc/php.ini &&\
+  echo extension=mcrypt.so  >> /usr/local/php/etc/php.ini 
+
+#RUN  /etc/init.d/php-fpm restart
+#  echo echo extension=mcrypt.so > mcrypt.ini
+ #   echo zend_extension=/usr/local/php/modules/xdebug.so >> /usr/local/php/etc/php.ini 
 
 #Clean OS
 RUN set -x && \
