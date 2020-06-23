@@ -2,7 +2,9 @@ FROM centos:7
 MAINTAINER chankongching <chankongching@gmail.com>
 
 ENV NGINX_VERSION 1.15.9
-ENV PHP_VERSION 7.2.16
+#ENV PHP_VERSION 7.2.16
+ENV PHP_VERSION 7.4.6
+#ENV PHP_VERSION 7.3.18
 ENV REDIS_VERSION 4.3.0RC2
 
 RUN set -x && \
@@ -48,8 +50,23 @@ RUN set -x && \
     openssh-server \
     python-setuptools \
     libxslt-devel* \
+    sqlite-devel \
     mysql
-    
+RUN set -x && \ 
+    yum install  -y http://down.24kplus.com/linux/oniguruma/oniguruma-6.7.0-1.el7.x86_64.rpm
+RUN set -x && \
+    yum install  -y http://down.24kplus.com/linux/oniguruma/oniguruma-devel-6.7.0-1.el7.x86_64.rpm
+RUN set -x && \
+    mkdir -p /usr/local/src/libzip && \
+    cd /usr/local/src/libzip && \
+    wget https://nih.at/libzip/libzip-1.2.0.tar.gz && \
+    tar -zxf libzip-1.2.0.tar.gz && \
+    cd libzip-1.2.0 &&\
+    ./configure  && \
+    # --disable-memcached-sasl && \
+    make && \
+    make install
+
 #Add user
 RUN set -x && \
     mkdir -p /var/www/{html,phpext} && \
@@ -60,7 +77,13 @@ RUN set -x && \
     curl -Lk http://nginx.org/download/nginx-$NGINX_VERSION.tar.gz | gunzip | tar x -C /home/nginx-php && \
     curl -Lk http://hk1.php.net/distributions/php-$PHP_VERSION.tar.gz | gunzip | tar x -C /home/nginx-php
 #    curl -Lk http://php.net/distributions/php-$PHP_VERSION.tar.gz | gunzip | tar x -C /home/nginx-php
-
+#
+RUN set -x && \
+     echo /usr/local/lib64 >> /etc/ld.so.conf && \
+     echo /usr/local/lib >> /etc/ld.so.conf && \
+     echo /usr/lib >> /etc/ld.so.conf && \
+     echo /usr/lib64 >> /etc/ld.so.conf && \
+     ldconfig -v
 #Make install nginx
 RUN set -x && \
     cd /home/nginx-php/nginx-$NGINX_VERSION && \
@@ -78,6 +101,7 @@ RUN set -x && \
 
 #Make install php
 RUN set -x && \
+    cp /usr/local/lib/libzip/include/zipconf.h /usr/local/include/zipconf.h &&\
     cd /home/nginx-php/php-$PHP_VERSION && \
     ./configure --prefix=/usr/local/php \
     --with-config-file-path=/usr/local/php/etc \
@@ -111,6 +135,7 @@ RUN set -x && \
     --enable-fpm \
     --enable-xml \
     --enable-shmop \
+    --enable-gd \
     --enable-sysvsem \
     --enable-sysvmsg \
     --enable-sysvshm \
@@ -149,8 +174,9 @@ RUN set -x && \
 RUN set -x && \
     mkdir -p /usr/local/src/php-memcache && \
     cd /usr/local/src/php-memcache && \
-    wget https://github.com/php-memcached-dev/php-memcached/archive/php7.zip && \
-    unzip php7.zip && \
+    wget https://github.com/php-memcached-dev/php-memcached/archive/master.zip && \
+    unzip master.zip && \
+    mv php-memcached-master php-memcached-php7 && \
     cd php-memcached-php7 && \
     /usr/local/php/bin/phpize && \
     ./configure --with-php-config=/usr/local/php/bin/php-config && \
@@ -221,7 +247,7 @@ RUN yum  install -y  php-pear
 RUN /usr/local/php/bin/pecl channel-update pecl.php.net
 #RUN yum install libxslt-devel* -y
 # Use pecl
-RUN /usr/local/php/bin/pecl install mcrypt-1.0.2 igbinary-3.0.0 pcntl-3.0.0 libxslt-devel*  php-xsl  php-mcrypt  xdebug-2.6.0 &&\
+RUN /usr/local/php/bin/pecl install mcrypt-1.0.2 igbinary-3.0.0 pcntl-3.0.0 libxslt-devel*  php-xsl  php-mcrypt  xdebug-2.9.3 &&\
     #  echo zend_extension=/usr/local/php/lib/php/extensions/no-debug-non-zts-20170718/xdebug.so >> /usr/local/php/etc/php.ini  &&\
   echo zend_extension=xdebug.so >> /usr/local/php/etc/php.ini &&\
   echo zend_extension=xsl.so >> /usr/local/php/etc/php.ini &&\
