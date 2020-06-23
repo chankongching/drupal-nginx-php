@@ -245,18 +245,12 @@ RUN yum  install -y  php-pear
 
 # Update pecl
 RUN /usr/local/php/bin/pecl channel-update pecl.php.net
-#RUN yum install libxslt-devel* -y
 # Use pecl
-RUN /usr/local/php/bin/pecl install mcrypt-1.0.2 igbinary-3.0.0 pcntl-3.0.0 libxslt-devel*  php-xsl  php-mcrypt  xdebug-2.9.3 &&\
+RUN /usr/local/php/bin/pecl install mcrypt igbinary-3.0.0 pcntl-3.0.0 libxslt-devel*  php-xsl  php-mcrypt  xdebug-2.9.3 &&\
     #  echo zend_extension=/usr/local/php/lib/php/extensions/no-debug-non-zts-20170718/xdebug.so >> /usr/local/php/etc/php.ini  &&\
   echo zend_extension=xdebug.so >> /usr/local/php/etc/php.ini &&\
-  echo zend_extension=xsl.so >> /usr/local/php/etc/php.ini &&\
   echo extension=igbinary.so  >> /usr/local/php/etc/php.ini &&\
   echo extension=mcrypt.so  >> /usr/local/php/etc/php.ini 
-
-#RUN  /etc/init.d/php-fpm restart
-#  echo echo extension=mcrypt.so > mcrypt.ini
- #   echo zend_extension=/usr/local/php/modules/xdebug.so >> /usr/local/php/etc/php.ini 
 
 #Clean OS
 RUN set -x && \
