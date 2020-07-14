@@ -120,7 +120,6 @@ RUN set -x && \
     make && make install
 RUN  cp -frp /usr/lib64/libldap* /usr/lib/
 RUN yum  install -y readline-devel 
-RUN yum -y install unixODBC-*
 #RUN yum erase epel-release  -y 
 #RUN yum install -y rpm-build
 #RUN  rpm -ivh https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm 
@@ -166,7 +165,6 @@ RUN set -x && \
 #RUN yum  install -y libtidy-devel
 #RUN yum install -y libzip-devel
 RUN ldconfig /etc/ld.so.conf.d
-#RUN yum install -y  install php_odbc
 RUN ls /usr/local/lib  
 ENV PKG_CONFIG_PATH="/usr/local/lib/pkgconfig/" 
 RUN set -x && \
@@ -187,7 +185,7 @@ RUN set -x && \
     --with-gmp \
     --with-intl \
     --with-ldap \
-    --with-odbc=unixODBC,/usr/local \
+    --with-odbc=unixODBC \
     --with-dblib \
     --with-PDO_ODBC \
     --with-pdo_pgsql \
@@ -350,34 +348,9 @@ RUN set -x && \
     ./configure --with-php-config=/usr/local/php/bin/php-config --with-pdo-dblib=/usr/local/freetds/ && \
     make && make install  &&\
     echo extension = pdo_dblib.so   >> /usr/local/php/etc/php.ini
-
-# Enable pdo_odbc
-RUN set -x && \
-    cd /home/nginx-php/php-$PHP_VERSION/ext/pdo_odbc &&\
-    /usr/local/php/bin/phpize && \
-    ./configure --with-php-config=/usr/local/php/bin/php-config    --with-pdo-odbc=unixODBC,/usr &&\
-#    ./configure --with-php-config=/usr/local/php/bin/php-config    --with-pdo-odbc=generic,/usr/local,libname,ldflags,cflags  &&\
-    make && make install  &&\
-    echo extension =pdo-odbc.so   >> /usr/local/php/etc/php.ini  &&\
-    echo extension=php-pdo-odbc.so  >> /usr/local/php/etc/php.ini
-RUN yum install -y  unixODBC  &&\
-    curl  https://packages.microsoft.com/config/rhel/7/prod.repo > /etc/yum.repos.d/mssql-release.repo  &&\
-    yum remove -y unixODBC-utf16 unixODBC-utf16-devel    &&\
-    ACCEPT_EULA=Y yum install -y msodbcsql17        &&\
-    echo 'export PATH="$PATH:/opt/mssql-tools/bin"' >> ~/.bash_profile  &&\
-    echo 'export PATH="$PATH:/opt/mssql-tools/bin"' >> ~/.bashrc  &&\
-    source ~/.bashrc &&\
-    yum install -y unixODBC-devel 
-
-
-#RUN set -x && \
-#    cd /home/nginx-php/php-$PHP_VERSION/ext/odbc &&\
-#    /usr/local/php/bin/phpize && \
-#    ./configure --with-php-config=/usr/local/php/bin/php-config    --with-pdo-odbc=unixODBC,/usr/local &&\
- #   ./configure --with-php-config=/usr/local/php/bin/php-config    &&\
-#    make && make install  &&\
-#    echo extension =pdo-odbc.so   >> /usr/local/php/etc/php.ini  &&\
-#    echo extension=odbc.so  >> /usr/local/php/etc/php.ini
+    
+     
+     
 
 
 # Changing php.ini

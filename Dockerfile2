@@ -120,7 +120,6 @@ RUN set -x && \
     make && make install
 RUN  cp -frp /usr/lib64/libldap* /usr/lib/
 RUN yum  install -y readline-devel 
-RUN yum -y install unixODBC-*
 #RUN yum erase epel-release  -y 
 #RUN yum install -y rpm-build
 #RUN  rpm -ivh https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm 
@@ -166,7 +165,6 @@ RUN set -x && \
 #RUN yum  install -y libtidy-devel
 #RUN yum install -y libzip-devel
 RUN ldconfig /etc/ld.so.conf.d
-#RUN yum install -y  install php_odbc
 RUN ls /usr/local/lib  
 ENV PKG_CONFIG_PATH="/usr/local/lib/pkgconfig/" 
 RUN set -x && \
@@ -180,14 +178,13 @@ RUN set -x && \
     --with-mcrypt=/usr/include \
     --with-mysqli \
     --with-pdo-mysql \
-    --with-libxml \
     --with-bz2 \
     --with-calendar \
     --with-dba \
     --with-gmp \
     --with-intl \
     --with-ldap \
-    --with-odbc=unixODBC,/usr/local \
+    --with-odbc \
     --with-dblib \
     --with-PDO_ODBC \
     --with-pdo_pgsql \
@@ -199,6 +196,7 @@ RUN set -x && \
     --with-readline \
     --with-sodium \
     --with-tidy=/usr/local/tidy \
+    --with-wddx \
     --with-zip \
     --with-openssl \
     --with-gd \
@@ -237,10 +235,10 @@ RUN set -x && \
     --enable-readline \
     --enable-sodium \
     --enable-tidy \
-    --enable-libxml \
     --enable-wddx \
     --enable-zip \
     --enable-bcmath \
+    --enable-wddx \
     --enable-fpm \
     --enable-xml \
     --enable-shmop \
@@ -309,77 +307,6 @@ RUN set -x && \
     make install && \
     echo extension=redis.so >> /usr/local/php/etc/php.ini
 
-# Enable wddx
-RUN set -x && \
-    cd /root && \
-    wget https://github.com/php/pecl-text-wddx/archive/master.zip -O wddx.zip && \
-    #wget https://github.com/phpredis/phpredis/archive/master.zip -O phpredis.zip && \
-    unzip -o /root/wddx.zip && \
-#    mv /root/phpredis-* /root/phpredis && \
-    cd /root/pecl-text-wddx-master && \
-    /usr/local/php/bin/phpize && \
-    ./configure --with-php-config=/usr/local/php/bin/php-config && \
-    make && \
-    make install && \
-    echo extension=wddx.so >> /usr/local/php/etc/php.ini 
-
-# Enable pdo_dblib
-RUN set -x && \
-    cd /root && \
-    wget ftp://ftp.unixodbc.org/pub/unixODBC/unixODBC-2.3.4.tar.gz &&\
-    tar -zxvf unixODBC-2.3.4.tar.gz && \
-    cd unixODBC-2.3.4    &&\
-#    mv /root/phpredis-* /root/phpredis && \
-   # cd /root/pecl-text-wddx-master && \
-#    /usr/local/php/bin/phpize && \
-#    ./configure --with-php-config=/usr/local/php/bin/php-config && \
-    ./configure  &&\
-    make && \
-    make install 
-#   echo extension=wddx.so >> /usr/local/php/etc/php.ini &&\
-RUN set -x && \
-    cd /root && \
-    wget http://mirrors.ibiblio.org/freetds/stable/freetds-stable.tgz &&\
-    tar -zxvf freetds-stable.tgz  &&\
-    cd freetds-*    &&\
-    ./configure --prefix=/usr/local/freetds --with-tdsver=8.0 --enable-msdblib  --with-gnu-ld --with-unixodbc=/usr/local   &&\
-    make && make install
-RUN set -x && \
-    cd /home/nginx-php/php-$PHP_VERSION/ext/pdo_dblib  &&\
-    /usr/local/php/bin/phpize && \
-    ./configure --with-php-config=/usr/local/php/bin/php-config --with-pdo-dblib=/usr/local/freetds/ && \
-    make && make install  &&\
-    echo extension = pdo_dblib.so   >> /usr/local/php/etc/php.ini
-
-# Enable pdo_odbc
-RUN set -x && \
-    cd /home/nginx-php/php-$PHP_VERSION/ext/pdo_odbc &&\
-    /usr/local/php/bin/phpize && \
-    ./configure --with-php-config=/usr/local/php/bin/php-config    --with-pdo-odbc=unixODBC,/usr &&\
-#    ./configure --with-php-config=/usr/local/php/bin/php-config    --with-pdo-odbc=generic,/usr/local,libname,ldflags,cflags  &&\
-    make && make install  &&\
-    echo extension =pdo-odbc.so   >> /usr/local/php/etc/php.ini  &&\
-    echo extension=php-pdo-odbc.so  >> /usr/local/php/etc/php.ini
-RUN yum install -y  unixODBC  &&\
-    curl  https://packages.microsoft.com/config/rhel/7/prod.repo > /etc/yum.repos.d/mssql-release.repo  &&\
-    yum remove -y unixODBC-utf16 unixODBC-utf16-devel    &&\
-    ACCEPT_EULA=Y yum install -y msodbcsql17        &&\
-    echo 'export PATH="$PATH:/opt/mssql-tools/bin"' >> ~/.bash_profile  &&\
-    echo 'export PATH="$PATH:/opt/mssql-tools/bin"' >> ~/.bashrc  &&\
-    source ~/.bashrc &&\
-    yum install -y unixODBC-devel 
-
-
-#RUN set -x && \
-#    cd /home/nginx-php/php-$PHP_VERSION/ext/odbc &&\
-#    /usr/local/php/bin/phpize && \
-#    ./configure --with-php-config=/usr/local/php/bin/php-config    --with-pdo-odbc=unixODBC,/usr/local &&\
- #   ./configure --with-php-config=/usr/local/php/bin/php-config    &&\
-#    make && make install  &&\
-#    echo extension =pdo-odbc.so   >> /usr/local/php/etc/php.ini  &&\
-#    echo extension=odbc.so  >> /usr/local/php/etc/php.ini
-
-
 # Changing php.ini
 RUN set -x && \
     sed -i 's/memory_limit = .*/memory_limit = 1024M/' /usr/local/php/etc/php.ini && \
@@ -427,12 +354,11 @@ RUN yum  install -y  php-pear
 # Update pecl
 RUN /usr/local/php/bin/pecl channel-update pecl.php.net
 # Use pecl
-RUN /usr/local/php/bin/pecl install mcrypt igbinary-3.0.0 pcntl-3.0.0 libxslt-devel*  php-xsl  php-mcrypt  xdebug-2.9.3  wddx &&\
+RUN /usr/local/php/bin/pecl install mcrypt igbinary-3.0.0 pcntl-3.0.0 libxslt-devel*  php-xsl  php-mcrypt  xdebug-2.9.3 &&\
     #  echo zend_extension=/usr/local/php/lib/php/extensions/no-debug-non-zts-20170718/xdebug.so >> /usr/local/php/etc/php.ini  &&\
   echo zend_extension=xdebug.so >> /usr/local/php/etc/php.ini &&\
   echo extension=igbinary.so  >> /usr/local/php/etc/php.ini &&\
-  echo extension=mcrypt.so  >> /usr/local/php/etc/php.ini  &&\
-  echo extension=wddx.so >>/usr/local/php/etc/php.ini
+  echo extension=mcrypt.so  >> /usr/local/php/etc/php.ini 
 
 #Clean OS
 RUN set -x && \
