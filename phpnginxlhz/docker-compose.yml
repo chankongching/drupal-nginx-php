@@ -1,0 +1,29 @@
+version: '3'
+services:
+  foundation:
+    image: "php_nginx21:v1"
+    volumes:
+      - /var/www/html:/usr/local/nginx/html 
+    ports:
+      - "80:80"
+    networks:
+      - allinone
+    container_name: foundation
+    restart: always
+  mysql:
+    image: mysql:5.7
+    volumes:
+      - /root/db/:/var/lib/mysql
+      - /root/scripts/my.cnf:/etc/mysql/my.cnf
+    environment:
+      MYSQL_ROOT_PASSWORD: "root"
+    ports:
+      - "3306:3306"
+    networks:
+      - allinone
+networks:
+  allinone:
+    driver: bridge
+    ipam:
+      driver: default
+
