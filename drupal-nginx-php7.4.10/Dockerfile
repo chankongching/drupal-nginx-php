@@ -299,8 +299,8 @@ RUN chmod +x /var/www/startup.sh
 RUN set -x && \
     curl -sS https://getcomposer.org/installer | php && \
     mv composer.phar /usr/local/bin/composer && \
-    composer global require drush/drush:~8 && \
-    sed -i '1i export PATH="$HOME/.composer/vendor/drush/drush:$PATH"' $HOME/.bashrc && \
+    composer global require drush/drush:~10 && \
+    sed -i '1i export PATH="$HOME/.config/composer/vendor/drush/drush:$PATH"' $HOME/.bashrc && \
     source $HOME/.bashrc
 
 RUN yum install -y which telnet
