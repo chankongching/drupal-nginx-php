@@ -51,6 +51,8 @@ RUN set -x && \
     python-setuptools \
     libxslt-devel* \
     sqlite-devel \
+    libxml2 \
+    libxml2-devel \
     mysql
 RUN set -x && \ 
     yum install  -y http://down.24kplus.com/linux/oniguruma/oniguruma-6.7.0-1.el7.x86_64.rpm
@@ -111,6 +113,26 @@ RUN set -x && \
     --with-mcrypt=/usr/include \
     --with-mysqli \
     --with-pdo-mysql \
+    --with-bz2 \
+    --with-calendar \
+    --with-dba \
+    --with-gmp \
+    --with-intl \
+    --with-ldap \
+    --with-odbc \
+    --with-dblib \
+    --with-PDO_ODBC \
+    --with-pdo_pgsql \
+    --with-pdo_sqlite \
+    --with-sqlite \
+    --with-pgsql \
+    --with-phpdbg_webhelper \
+    --with-pspell \
+    --with-readline \
+    --with-sodium \
+    --with-tidy \
+    --with-wddx \
+    --with-zip \
     --with-openssl \
     --with-gd \
     --with-iconv \
@@ -130,6 +152,26 @@ RUN set -x && \
     --with-igbinary \
     --with-xsl \
     --with-mcrypt \
+    --enable-bz2 \
+    --enable-calendar \
+    --enable-dba \
+    --enable-gmp \
+    --enable-intl \
+    --enable-ldap \
+    --enable-odbc \
+    --enable-dblib \
+    --enable-PDO_ODBC \
+    --enable-pdo_pgsql \
+    --enable-pdo_sqlite \
+    --enable-sqlite \
+    --enable-pgsql \
+    --enable-phpdbg_webhelper \
+    --enable-pspell \
+    --enable-readline \
+    --enable-sodium \
+    --enable-tidy \
+    --enable-wddx \
+    --enable-zip \
     --enable-bcmath \
     --enable-wddx \
     --enable-fpm \

@@ -3,7 +3,7 @@ MAINTAINER chankongching <chankongching@gmail.com>
 
 ENV NGINX_VERSION 1.15.9
 #ENV PHP_VERSION 7.2.16
-ENV PHP_VERSION 7.4.6
+ENV PHP_VERSION 7.4.10
 #ENV PHP_VERSION 7.3.18
 ENV REDIS_VERSION 4.3.0RC2
 
@@ -51,8 +51,6 @@ RUN set -x && \
     python-setuptools \
     libxslt-devel* \
     sqlite-devel \
-    libxml2 \
-    libxml2-devel \
     mysql
 RUN set -x && \ 
     yum install  -y http://down.24kplus.com/linux/oniguruma/oniguruma-6.7.0-1.el7.x86_64.rpm
@@ -72,7 +70,7 @@ RUN set -x && \
 #Add user
 RUN set -x && \
     mkdir -p /var/www/{html,phpext} && \
-    useradd -r -s /sbin/nologin -d /var/www/html -m -k no www && \
+    useradd -r -s /sbin/nologin -d /var/www/html/web -m -k no www && \
 
 #Download nginx & php
     mkdir -p /home/nginx-php && cd $_ && \
@@ -113,26 +111,6 @@ RUN set -x && \
     --with-mcrypt=/usr/include \
     --with-mysqli \
     --with-pdo-mysql \
-    --with-bz2 \
-    --with-calendar \
-    --with-dba \
-    --with-gmp \
-    --with-intl \
-    --with-ldap \
-    --with-odbc \
-    --with-dblib \
-    --with-PDO_ODBC \
-    --with-pdo_pgsql \
-    --with-pdo_sqlite \
-    --with-sqlite \
-    --with-pgsql \
-    --with-phpdbg_webhelper \
-    --with-pspell \
-    --with-readline \
-    --with-sodium \
-    --with-tidy \
-    --with-wddx \
-    --with-zip \
     --with-openssl \
     --with-gd \
     --with-iconv \
@@ -152,26 +130,6 @@ RUN set -x && \
     --with-igbinary \
     --with-xsl \
     --with-mcrypt \
-    --enable-bz2 \
-    --enable-calendar \
-    --enable-dba \
-    --enable-gmp \
-    --enable-intl \
-    --enable-ldap \
-    --enable-odbc \
-    --enable-dblib \
-    --enable-PDO_ODBC \
-    --enable-pdo_pgsql \
-    --enable-pdo_sqlite \
-    --enable-sqlite \
-    --enable-pgsql \
-    --enable-phpdbg_webhelper \
-    --enable-pspell \
-    --enable-readline \
-    --enable-sodium \
-    --enable-tidy \
-    --enable-wddx \
-    --enable-zip \
     --enable-bcmath \
     --enable-wddx \
     --enable-fpm \
@@ -316,15 +274,15 @@ RUN set -x && \
 
 #Change Mod from webdir
 RUN set -x && \
-    chown -R www:www /var/www/html
+    chown -R www:www /var/www/html/web
 
 # Insert supervisord conf file
 ADD supervisord.conf /etc/
 
 #Create web folder,mysql folder
-VOLUME ["/var/www/html", "/usr/local/nginx/conf/ssl", "/usr/local/nginx/conf/vhost", "/usr/local/php/etc/php.d", "/var/www/phpext"]
+VOLUME ["/var/www/html/web", "/usr/local/nginx/conf/ssl", "/usr/local/nginx/conf/vhost", "/usr/local/php/etc/php.d", "/var/www/phpext"]
 
-ADD index.php /var/www/html
+ADD index.php /var/www/html/web
 
 ADD extfile/ /var/www/phpext/
 
@@ -362,4 +320,4 @@ ENTRYPOINT ["/var/www/startup.sh"]
 #CMD ["/bin/bash", "/startup.sh"]
 
 # Setting working directory
-WORKDIR /var/www/html
+WORKDIR /var/www/html/web
