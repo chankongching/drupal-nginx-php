@@ -252,12 +252,21 @@ RUN set -x && \
 RUN yum  install -y  php-pear
 
 RUN yum remove oniguruma oniguruma-devel -y 
-RUN yum install oniguruma-6.7.0 oniguruma-devel-6.7.0 libsodium -y
+# RUN yum install oniguruma oniguruma-devel libsodium -y
+
+RUN set -x && \
+    wget https://github.com/kkos/oniguruma/releases/download/v6.8.2/onig-6.8.2.tar.gz -O oniguruma-6.8.2.tar.gz && \
+    tar -zxf oniguruma-6.8.2.tar.gz && \
+    cd oniguruma-6.8.2 && \
+    ./autogen.sh && ./configure --prefix=/usr && \
+    make && make install
+
+
 
 # force libonig to use new version
-RUN ln -sf /usr/lib64/libonig.so.5 /usr/lib64/libonig.so.4
+# RUN ln -sf /usr/lib64/libonig.so.5 /usr/lib64/libonig.so.4
 
-RUN export LD_LIBRARY_PATH=/usr/lib64
+# RUN export LD_LIBRARY_PATH=/usr/lib64
 
 # Update pecl
 RUN /usr/local/php/bin/pecl channel-update pecl.php.net
