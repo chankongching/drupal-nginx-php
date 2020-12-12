@@ -255,22 +255,28 @@ RUN yum remove oniguruma oniguruma-devel -y
 # RUN yum install oniguruma oniguruma-devel libsodium -y
 
 RUN set -x && \
-    wget https://github.com/kkos/oniguruma/releases/download/v6.8.2/onig-6.8.2.tar.gz -O oniguruma-6.8.2.tar.gz && \
-    tar -zxf oniguruma-6.8.2.tar.gz && \
-    cd oniguruma-6.8.2 && \
-    ./autogen.sh && ./configure --prefix=/usr && \
+    wget https://github.com/kkos/oniguruma/releases/download/v6.7.1/onig-6.7.1.tar.gz -O oniguruma-6.7.1.tar.gz && \
+    tar -zxf oniguruma-6.7.1.tar.gz && \
+    cd ./onig-6.7.1 && \
+    ./configure --prefix=/usr && \
     make && make install
 
-
+RUN echo $(find / -name 'libonig.so*')
 
 # force libonig to use new version
 # RUN ln -sf /usr/lib64/libonig.so.5 /usr/lib64/libonig.so.4
 
-# RUN export LD_LIBRARY_PATH=/usr/lib64
+# RUN export LD_LIBRARY_PATH=/usr/lib
+# RUN export LD_RUN_PATH=/usr/lib
+
+# RUN chmod 777 /usr/lib/libonig.so
+# RUN chmod 777 /usr/lib/libonig.so.4 
+#echo extension=libonig.so >> /usr/local/php/etc/php.ini
 
 # Update pecl
-RUN /usr/local/php/bin/pecl channel-update pecl.php.net
+# RUN /usr/local/php/bin/pecl channel-update pecl.php.net
 
+RUN /usr/local/php/bin/php -m
 
 # Use pecl
 RUN /usr/local/php/bin/pecl install mcrypt igbinary-3.0.0 pcntl-3.0.0 libxslt-devel*  php-xsl  php-mcrypt  xdebug-2.9.3 &&\
