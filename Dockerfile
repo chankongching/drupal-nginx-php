@@ -37,6 +37,13 @@ RUN set -x && \
     ./configure --prefix=/usr && \
     make && make install
 
+# Install again
+RUN set -x && \
+    yum install  -y http://down.24kplus.com/linux/oniguruma/oniguruma-6.7.0-1.el7.x86_64.rpm
+RUN set -x && \
+    yum install  -y http://down.24kplus.com/linux/oniguruma/oniguruma-devel-6.7.0-1.el7.x86_64.rpm
+
+RUN yum install oniguruma oniguruma-devel libsodium -y
 
 #Install PHP library
 ## libmcrypt-devel DIY
