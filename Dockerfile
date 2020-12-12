@@ -136,17 +136,19 @@ RUN set -x && \
     --with-gettext \
     --with-curl \
     --with-png-dir \
-    --with-jpeg-dir \
-    --with-freetype-dir \
+    --with-jpeg \
+    --with-freetype \
     --with-xmlrpc \
     --with-mhash \
     --with-gettext \
     --with-memcached \
     --with-exif \
     --with-wddx \
+    --with-webp \
     --with-igbinary \
     --with-xsl \
     --with-mcrypt \
+    --with-xpm \
     --enable-bcmath \
     --enable-wddx \
     --enable-fpm \
