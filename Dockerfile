@@ -144,7 +144,6 @@ RUN set -x && \
     --with-memcached \
     --with-exif \
     --with-wddx \
-    --with-webp \
     --with-igbinary \
     --with-xsl \
     --with-mcrypt \
