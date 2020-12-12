@@ -29,6 +29,15 @@ RUN set -x && \
     make && \
     make install
 
+# Install oniguruma
+RUN set -x && \
+    wget https://github.com/kkos/oniguruma/releases/download/v6.7.1/onig-6.7.1.tar.gz -O oniguruma-6.7.1.tar.gz && \
+    tar -zxf oniguruma-6.7.1.tar.gz && \
+    cd ./onig-6.7.1 && \
+    ./configure --prefix=/usr && \
+    make && make install
+
+
 #Install PHP library
 ## libmcrypt-devel DIY
 RUN set -x && \
@@ -51,10 +60,9 @@ RUN set -x && \
     libxslt-devel* \
     sqlite-devel \
     mysql
-RUN set -x && \ 
-    yum install  -y http://down.24kplus.com/linux/oniguruma/oniguruma-6.7.0-1.el7.x86_64.rpm
-RUN set -x && \
-    yum install  -y http://down.24kplus.com/linux/oniguruma/oniguruma-devel-6.7.0-1.el7.x86_64.rpm
+
+
+
 RUN set -x && \
     mkdir -p /usr/local/src/libzip && \
     cd /usr/local/src/libzip && \
@@ -162,7 +170,7 @@ RUN set -x && \
     --enable-mcrypt \
     --disable-rpath \
     --enable-ipv6 \
-    --disable-debug && \ 
+    --disable-debug && \
     make && make install
 
 #Install php-fpm
@@ -221,7 +229,7 @@ RUN set -x && \
     sed -i 's/^;opcache.fast_shutdown=.*/opcache.fast_shutdown=1/' /usr/local/php/etc/php.ini && \
     sed -i 's/^;opcache.enable_cli=.*/opcache.enable_cli=1/' /usr/local/php/etc/php.ini
 
-# Changing php-fpm configureations
+# Changing php-fpm configurations
 RUN set -x && \
     sed -i 's/listen = .*/listen = \/var\/run\/php-fpm-www.sock/' /usr/local/php/etc/php-fpm.d/www.conf && \
     sed -i 's/;listen.owner = www/listen.owner = www/' /usr/local/php/etc/php-fpm.d/www.conf && \
@@ -245,45 +253,23 @@ RUN set -x && \
 RUN set -x && \
     yum  install epel-release -y && \
     yum  update -y && \
-    yum install -y libmcrypt-devel libmcrypt mcrypt mhash 
+    yum install -y libmcrypt-devel libmcrypt mcrypt mhash
 
 # RUN echo $(find / -name 'libonig.so*')
 
 RUN yum  install -y  php-pear
 
-RUN yum remove oniguruma oniguruma-devel -y 
-# RUN yum install oniguruma oniguruma-devel libsodium -y
-
-RUN set -x && \
-    wget https://github.com/kkos/oniguruma/releases/download/v6.7.1/onig-6.7.1.tar.gz -O oniguruma-6.7.1.tar.gz && \
-    tar -zxf oniguruma-6.7.1.tar.gz && \
-    cd ./onig-6.7.1 && \
-    ./configure --prefix=/usr && \
-    make && make install
-
-RUN echo $(find / -name 'libonig.so*')
-
-# force libonig to use new version
-# RUN ln -sf /usr/lib64/libonig.so.5 /usr/lib64/libonig.so.4
-
-# RUN export LD_LIBRARY_PATH=/usr/lib
-# RUN export LD_RUN_PATH=/usr/lib
-
-# RUN chmod 777 /usr/lib/libonig.so
-# RUN chmod 777 /usr/lib/libonig.so.4 
-#echo extension=libonig.so >> /usr/local/php/etc/php.ini
-
 # Update pecl
 # RUN /usr/local/php/bin/pecl channel-update pecl.php.net
 
-RUN /usr/local/php/bin/php -m
+# RUN /usr/local/php/bin/php -m
 
 # Use pecl
 RUN /usr/local/php/bin/pecl install mcrypt igbinary-3.0.0 pcntl-3.0.0 libxslt-devel*  php-xsl  php-mcrypt  xdebug-2.9.3 &&\
     #  echo zend_extension=/usr/local/php/lib/php/extensions/no-debug-non-zts-20170718/xdebug.so >> /usr/local/php/etc/php.ini  &&\
   echo zend_extension=xdebug.so >> /usr/local/php/etc/php.ini &&\
   echo extension=igbinary.so  >> /usr/local/php/etc/php.ini &&\
-  echo extension=mcrypt.so  >> /usr/local/php/etc/php.ini 
+  echo extension=mcrypt.so  >> /usr/local/php/etc/php.ini
 
 #Clean OS
 RUN set -x && \
