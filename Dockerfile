@@ -147,7 +147,6 @@ RUN set -x && \
     --with-igbinary \
     --with-xsl \
     --with-mcrypt \
-    --with-xpm \
     --enable-bcmath \
     --enable-wddx \
     --enable-fpm \
