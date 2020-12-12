@@ -32,7 +32,6 @@ RUN set -x && \
 #Install PHP library
 ## libmcrypt-devel DIY
 RUN set -x && \
-    rpm -ivh http://dl.fedoraproject.org/pub/epel/6/i386/epel-release-6-8.noarch.rpm && \
     yum install -y zlib \
     zlib-devel \
     re2c \
@@ -67,6 +66,9 @@ RUN set -x && \
     make && \
     make install
 
+# Provide jpeg support
+RUN set -x && \
+    yum install -y libjpeg-devel
 #Add user
 RUN set -x && \
     mkdir -p /var/www/{html,phpext} && \
@@ -240,11 +242,27 @@ RUN set -x && \
 
 
 # Run prerequisite
-RUN yum install -y libmcrypt-devel
+RUN set -x && \
+    yum  install epel-release -y && \
+    yum  update -y && \
+    yum install -y libmcrypt-devel libmcrypt mcrypt mhash 
+
+# RUN echo $(find / -name 'libonig.so*')
+
 RUN yum  install -y  php-pear
+
+RUN yum remove oniguruma oniguruma-devel -y 
+RUN yum install oniguruma-6.7.0 oniguruma-devel-6.7.0 libsodium -y
+
+# force libonig to use new version
+RUN ln -sf /usr/lib64/libonig.so.5 /usr/lib64/libonig.so.4
+
+RUN export LD_LIBRARY_PATH=/usr/lib64
 
 # Update pecl
 RUN /usr/local/php/bin/pecl channel-update pecl.php.net
+
+
 # Use pecl
 RUN /usr/local/php/bin/pecl install mcrypt igbinary-3.0.0 pcntl-3.0.0 libxslt-devel*  php-xsl  php-mcrypt  xdebug-2.9.3 &&\
     #  echo zend_extension=/usr/local/php/lib/php/extensions/no-debug-non-zts-20170718/xdebug.so >> /usr/local/php/etc/php.ini  &&\
