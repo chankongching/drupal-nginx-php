@@ -325,11 +325,13 @@ RUN chmod +x /var/www/startup.sh
 RUN set -x && \
     curl -sS https://getcomposer.org/installer | php && \
     mv composer.phar /usr/local/bin/composer && \
-    composer global require drush/drush:~8 && \
+    composer self-update --1 && \
+    composer global require drush/drush:~10 && \
     sed -i '1i export PATH="$HOME/.composer/vendor/drush/drush:$PATH"' $HOME/.bashrc && \
     source $HOME/.bashrc
 
-RUN yum install -y which telnet
+# install tools
+RUN yum install -y which telnet git
 
 # RUN rpm -Uvh http://yum.newrelic.com/pub/newrelic/el5/x86_64/newrelic-repo-5-3.noarch.rpm
 # RUN yum install -y yum install newrelic-php5
