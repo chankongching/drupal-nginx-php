@@ -284,6 +284,7 @@ RUN set -x && \
     gcc-c++ \
     autoconf \
     automake \
+    kernel-headers-3.10.0-1160.6.1.el7.x86_64 \
     libtool \
     make \
     cmake && \
