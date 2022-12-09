@@ -145,6 +145,7 @@ RUN set -x && \
     # --enable-mcrypt \
     --disable-rpath \
     --enable-ipv6 \
+    --enable-gd \
     --disable-debug && \
     make && make install
 
