@@ -1,12 +1,12 @@
-FROM centos:7
+FROM rockylinux:9
 MAINTAINER chankongching <chankongching@gmail.com>
 
-ENV NGINX_VERSION 1.15.9
-ENV PHP_VERSION 7.2.16
-ENV REDIS_VERSION 4.3.0RC2
+ENV NGINX_VERSION 1.22.1
+ENV PHP_VERSION 8.1.13
+ENV REDIS_VERSION 5.3.7
 
 RUN set -x && \
-    yum install -y gcc \
+    dnf install -y gcc \
     cyrus-sasl-devel \
     unzip \
     wget \
@@ -15,23 +15,29 @@ RUN set -x && \
     automake \
     libtool \
     make \
-    cmake
+    cmake \
+    file \
+    diffutils \
+    findutils
 
-# Get the latest libmemcached
-RUN set -x && \
-    cd /root && \
-    wget https://launchpad.net/libmemcached/1.0/1.0.18/+download/libmemcached-1.0.18.tar.gz && \
-    tar -xvf libmemcached-1.0.18.tar.gz && \
-    cd libmemcached-1.0.18 && \
-    ./configure --disable-memcached-sasl && \
-    make && \
-    make install
+# # Get the latest libmemcached
+# RUN set -x && \
+#     cd /root && \
+#     wget https://launchpad.net/libmemcached/1.0/1.0.18/+download/libmemcached-1.0.18.tar.gz && \
+#     tar -xvf libmemcached-1.0.18.tar.gz && \
+#     cd libmemcached-1.0.18 && \
+#     ./configure --disable-memcached-sasl && \
+#     make && \
+#     make install
+
+ RUN set -x && \
+     dnf --enablerepo=crb install -y libmemcached-awesome libmemcached-awesome-devel
 
 #Install PHP library
 ## libmcrypt-devel DIY
 RUN set -x && \
-    rpm -ivh http://dl.fedoraproject.org/pub/epel/6/i386/epel-release-6-8.noarch.rpm && \
-    yum install -y zlib \
+    rpm -ivh https://dl.fedoraproject.org/pub/epel/epel-release-latest-9.noarch.rpm && \
+    dnf install -y zlib \
     zlib-devel \
     re2c \
     openssl \
@@ -47,9 +53,12 @@ RUN set -x && \
     libmcrypt-devel \
     openssh-server \
     python-setuptools \
+    pip \
     libxslt-devel* \
-    mysql
-    
+    sqlite-devel \
+    mysql && \
+    dnf --enablerepo=crb install -y oniguruma-devel
+
 #Add user
 RUN set -x && \
     mkdir -p /var/www/{html,phpext} && \
@@ -84,58 +93,59 @@ RUN set -x && \
     --with-config-file-scan-dir=/usr/local/php/etc/php.d \
     --with-fpm-user=www \
     --with-fpm-group=www \
-    --with-mcrypt=/usr/include \
+    # --with-mcrypt=/usr/include \
     --with-mysqli \
     --with-pdo-mysql \
     --with-openssl \
-    --with-gd \
+    # --with-gd \
     --with-iconv \
     --with-zlib \
-    --with-libexslt \
+    # --with-libexslt \
     --with-gettext \
     --with-curl \
-    --with-png-dir \
-    --with-jpeg-dir \
-    --with-freetype-dir \
-    --with-xmlrpc \
+    # --with-png-dir \
+    # --with-jpeg-dir \
+    # --with-freetype-dir \
+    # --with-xmlrpc \
     --with-mhash \
     --with-gettext \
-    --with-memcached \
-    --with-exif \
-    --with-wddx \
-    --with-igbinary \
+    # --with-memcached \
+    # --with-exif \
+    # --with-wddx \
+    # --with-igbinary \
     --with-xsl \
-    --with-mcrypt \
+    # --with-mcrypt \
+    --without-pear \
     --enable-bcmath \
-    --enable-wddx \
+    # --enable-wddx \
     --enable-fpm \
     --enable-xml \
     --enable-shmop \
     --enable-sysvsem \
     --enable-sysvmsg \
     --enable-sysvshm \
-    --enable-xdebug \
-    --enable-inline-optimization \
+    # --enable-xdebug \
+    # --enable-inline-optimization \
     --enable-mbregex \
     --enable-mbstring \
     --enable-ftp \
-    --enable-gd-native-ttf \
+    # --enable-gd-native-ttf \
     --enable-mysqlnd \
-    --enable-igbinary \
+    # --enable-igbinary \
     --enable-pcntl \
     --enable-sockets \
-    --enable-zip \
+    # --enable-zip \
     --enable-soap \
     --enable-session \
     --enable-opcache \
     --enable-bcmath \
     --enable-exif \
-    --enable-xsl \
+    # --enable-xsl \
     --enable-fileinfo \
-    --enable-mcrypt \
+    # --enable-mcrypt \
     --disable-rpath \
     --enable-ipv6 \
-    --disable-debug && \ 
+    --disable-debug && \
     make && make install
 
 #Install php-fpm
@@ -149,9 +159,9 @@ RUN set -x && \
 RUN set -x && \
     mkdir -p /usr/local/src/php-memcache && \
     cd /usr/local/src/php-memcache && \
-    wget https://github.com/php-memcached-dev/php-memcached/archive/php7.zip && \
-    unzip php7.zip && \
-    cd php-memcached-php7 && \
+    wget https://github.com/php-memcached-dev/php-memcached/archive/refs/tags/v3.2.0.zip && \
+    unzip v3.2.0.zip && \
+    cd php-memcached-3.2.0 && \
     /usr/local/php/bin/phpize && \
     ./configure --with-php-config=/usr/local/php/bin/php-config && \
     # --disable-memcached-sasl && \
@@ -202,46 +212,42 @@ RUN set -x && \
 
 #Install supervisor
 RUN set -x && \
-    easy_install supervisor && \
+    pip install supervisor && \
     mkdir -p /var/{log/supervisor,run/{sshd,supervisord}}
 
 ENV PATH /usr/local/php/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/root/.config/composer/vendor/bin
 
-# Install PEAR
-RUN set -x && \
-    wget http://pear.php.net/go-pear.phar && \
-    php go-pear.phar
-
-
 # Run prerequisite
-RUN yum install -y libmcrypt-devel
-RUN yum  install -y  php-pear
+RUN set -x && \
+    dnf  install -y php-pear
 
 # Update pecl
-RUN /usr/local/php/bin/pecl channel-update pecl.php.net
+RUN set -x && \
+    /usr/bin/pecl channel-update pecl.php.net
 #RUN yum install libxslt-devel* -y
 # Use pecl
-RUN /usr/local/php/bin/pecl install mcrypt-1.0.2 igbinary-3.0.0 pcntl-3.0.0 libxslt-devel*  php-xsl  php-mcrypt  xdebug-2.6.0 &&\
+RUN set -x && \
+    /usr/bin/pecl install mcrypt igbinary pcntl libxslt-devel*  php-xsl  php-mcrypt  xdebug &&\
     #  echo zend_extension=/usr/local/php/lib/php/extensions/no-debug-non-zts-20170718/xdebug.so >> /usr/local/php/etc/php.ini  &&\
-  echo zend_extension=xdebug.so >> /usr/local/php/etc/php.ini &&\
-  # echo zend_extension=xsl.so >> /usr/local/php/etc/php.ini &&\
-  echo extension=igbinary.so  >> /usr/local/php/etc/php.ini &&\
-  echo extension=mcrypt.so  >> /usr/local/php/etc/php.ini 
+    echo zend_extension=xdebug.so >> /usr/local/php/etc/php.ini &&\
+    # echo zend_extension=xsl.so >> /usr/local/php/etc/php.ini &&\
+    echo extension=igbinary.so  >> /usr/local/php/etc/php.ini &&\
+    echo extension=mcrypt.so  >> /usr/local/php/etc/php.ini
 
 #RUN  /etc/init.d/php-fpm restart
 #  echo echo extension=mcrypt.so > mcrypt.ini
- #   echo zend_extension=/usr/local/php/modules/xdebug.so >> /usr/local/php/etc/php.ini 
+ #   echo zend_extension=/usr/local/php/modules/xdebug.so >> /usr/local/php/etc/php.ini
 
 #Clean OS
 RUN set -x && \
-    yum remove -y gcc \
+    dnf remove -y gcc \
     gcc-c++ \
     autoconf \
     automake \
     libtool \
     make \
     cmake && \
-    yum clean all && \
+    dnf clean all && \
     rm -rf /tmp/* /var/cache/{yum,ldconfig} /etc/my.cnf{,.d} && \
     mkdir -p --mode=0755 /var/cache/{yum,ldconfig} && \
     find /var/log -type f -delete && \
@@ -286,7 +292,7 @@ RUN set -x && \
 # Update Composer
 RUN /usr/local/bin/composer self-update --2
 
-RUN yum install -y which telnet
+RUN dnf install -y which telnet
 
 # RUN rpm -Uvh http://yum.newrelic.com/pub/newrelic/el5/x86_64/newrelic-repo-5-3.noarch.rpm
 # RUN yum install -y yum install newrelic-php5

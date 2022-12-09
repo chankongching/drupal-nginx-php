@@ -3,8 +3,8 @@ Nginx_Install_Dir=/usr/local/nginx
 DATA_DIR=/var/www/html
 
 # Checking if newrelic variable is provided
-if [ ! -z ${NEWRELICKEY+x} ]; 
-then 
+if [ ! -z ${NEWRELICKEY+x} ];
+then
   if [ ! -z ${NEWRELICAPPNAME+x} ];
   then
     export NR_INSTALL_SILENT=true
@@ -18,4 +18,4 @@ set -e
 chown -R www.www $DATA_DIR
 #/docker-entrypoint.sh
 
-/usr/bin/supervisord -n -c /etc/supervisord.conf
+/usr/local/bin/supervisord -n -c /etc/supervisord.conf
