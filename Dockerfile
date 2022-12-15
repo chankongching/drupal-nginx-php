@@ -186,7 +186,7 @@ RUN set -x && \
 
 # Changing php.ini
 RUN set -x && \
-    sed -i 's/memory_limit = .*/memory_limit = 1024M/' /usr/local/php/etc/php.ini && \
+    sed -i 's/memory_limit = .*/memory_limit = -1/' /usr/local/php/etc/php.ini && \
     sed -i 's/post_max_size = .*/post_max_size = 512M/' /usr/local/php/etc/php.ini && \
     sed -i 's/upload_max_filesize = .*/upload_max_filesize = 512M/' /usr/local/php/etc/php.ini && \
     sed -i 's/post_max_size = .*/post_max_size = 512M/' /usr/local/php/etc/php.ini && \
@@ -286,8 +286,9 @@ RUN chmod +x /var/www/startup.sh
 RUN set -x && \
     curl -sS https://getcomposer.org/installer | php && \
     mv composer.phar /usr/local/bin/composer && \
-    composer global require drush/drush:~8 && \
+    composer global require drush/drush:~10 && \
     sed -i '1i export PATH="$HOME/.composer/vendor/drush/drush:$PATH"' $HOME/.bashrc && \
+    sed -i '1i unset which' $HOME/.bashrc && \
     source $HOME/.bashrc
 
 # Update Composer
