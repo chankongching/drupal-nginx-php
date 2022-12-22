@@ -18,7 +18,8 @@ RUN set -x && \
     cmake \
     file \
     diffutils \
-    findutils
+    findutils \
+    patch
 
 # # Get the latest libmemcached
 # RUN set -x && \
