@@ -19,7 +19,8 @@ RUN set -x && \
     file \
     diffutils \
     findutils \
-    patch
+    patch \
+    procps
 
 # # Get the latest libmemcached
 # RUN set -x && \
@@ -46,7 +47,7 @@ RUN set -x && \
     pcre-devel \
     libxml2 \
     libxml2-devel \
-    libcurl \
+    libcurl --allowerasing \
     libcurl-devel \
     libpng-devel \
     libjpeg-devel \
