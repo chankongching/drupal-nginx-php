@@ -148,6 +148,7 @@ RUN set -x && \
     --disable-rpath \
     --enable-ipv6 \
     --enable-gd \
+    --with-jpeg \
     --disable-debug && \
     make && make install
 
