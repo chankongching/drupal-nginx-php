@@ -2,7 +2,7 @@ FROM rockylinux:9
 MAINTAINER chankongching <chankongching@gmail.com>
 
 ENV NGINX_VERSION 1.22.1
-ENV PHP_VERSION 8.1.13
+ENV PHP_VERSION 8.2.1
 ENV REDIS_VERSION 5.3.7
 
 RUN set -x && \
