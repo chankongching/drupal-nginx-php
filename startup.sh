@@ -9,8 +9,8 @@ then
   then
     export NR_INSTALL_SILENT=true
     /usr/bin/newrelic-install install
-    sed -i "s/newrelic.appname = .*/newrelic.appname = \"$NEWRELICAPPNAME\"/" /usr/local/php/etc/php.d/newrelic.ini
-    sed -i "s/newrelic.license = .*/newrelic.license = \"$NEWRELICKEY\"/" /usr/local/php/etc/php.d/newrelic.ini
+    sed -i "s/newrelic.appname = .*/newrelic.appname = \"$NEWRELICAPPNAME\"/" /etc/php.d/newrelic.ini
+    sed -i "s/newrelic.license = .*/newrelic.license = \"$NEWRELICKEY\"/" /etc/php.d/newrelic.ini
   fi
 fi
 

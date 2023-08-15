@@ -1,8 +1,8 @@
 FROM rockylinux:9
 MAINTAINER chankongching <chankongching@gmail.com>
 
-ENV NGINX_VERSION 1.22.1
-ENV PHP_VERSION 8.1.18
+ENV NGINX_VERSION 1.24.0
+ENV PHP_VERSION 8.1.22
 ENV REDIS_VERSION 5.3.7
 
 RUN set -x && \
@@ -95,61 +95,47 @@ RUN set -x && \
     --with-config-file-scan-dir=/usr/local/php/etc/php.d \
     --with-fpm-user=www \
     --with-fpm-group=www \
-    # --with-mcrypt=/usr/include \
     --with-mysqli \
     --with-pdo-mysql \
     --with-openssl \
-    # --with-gd \
     --with-iconv \
     --with-zlib \
-    # --with-libexslt \
     --with-gettext \
     --with-curl \
-    # --with-png-dir \
-    # --with-jpeg-dir \
-    # --with-freetype-dir \
     # --with-xmlrpc \
+    # --enable-wddx \
     --with-mhash \
-    --with-gettext \
     # --with-memcached \
-    # --with-exif \
-    # --with-wddx \
     # --with-igbinary \
-    --with-xsl \
     # --with-mcrypt \
+    # --enable-xdebug \
+    --with-xsl \
     --without-pear \
     --enable-bcmath \
-    # --enable-wddx \
     --enable-fpm \
     --enable-xml \
     --enable-shmop \
     --enable-sysvsem \
     --enable-sysvmsg \
     --enable-sysvshm \
-    # --enable-xdebug \
-    # --enable-inline-optimization \
     --enable-mbregex \
     --enable-mbstring \
     --enable-ftp \
-    # --enable-gd-native-ttf \
     --enable-mysqlnd \
-    # --enable-igbinary \
     --enable-pcntl \
     --enable-sockets \
-    # --enable-zip \
+    --enable-zip \
     --enable-soap \
     --enable-session \
     --enable-opcache \
     --enable-bcmath \
     --enable-exif \
-    # --enable-xsl \
+    --with-xsl \
     --enable-fileinfo \
-    # --enable-mcrypt \
     --disable-rpath \
     --enable-ipv6 \
     --enable-gd \
-    --with-jpeg \
-    --disable-debug && \
+    --with-jpeg && \
     make && make install
 
 #Install php-fpm
@@ -231,15 +217,14 @@ RUN set -x && \
 #RUN yum install libxslt-devel* -y
 # Use pecl
 RUN set -x && \
-    /usr/bin/pecl install mcrypt igbinary pcntl libxslt-devel*  php-xsl  php-mcrypt  xdebug &&\
+    /usr/bin/pecl install mcrypt igbinary xdebug &&\
     #  echo zend_extension=/usr/local/php/lib/php/extensions/no-debug-non-zts-20170718/xdebug.so >> /usr/local/php/etc/php.ini  &&\
     echo zend_extension=xdebug.so >> /usr/local/php/etc/php.ini &&\
-    # echo zend_extension=xsl.so >> /usr/local/php/etc/php.ini &&\
     echo extension=igbinary.so  >> /usr/local/php/etc/php.ini &&\
     echo extension=mcrypt.so  >> /usr/local/php/etc/php.ini
 
 #RUN  /etc/init.d/php-fpm restart
-#  echo echo extension=mcrypt.so > mcrypt.ini
+#  echo extension=mcrypt.so > mcrypt.ini
  #   echo zend_extension=/usr/local/php/modules/xdebug.so >> /usr/local/php/etc/php.ini
 
 #Clean OS
@@ -299,8 +284,8 @@ RUN /usr/local/bin/composer self-update --2
 
 RUN dnf install -y which telnet
 
-# RUN rpm -Uvh http://yum.newrelic.com/pub/newrelic/el5/x86_64/newrelic-repo-5-3.noarch.rpm
-# RUN yum install -y yum install newrelic-php5
+RUN rpm -Uvh http://yum.newrelic.com/pub/newrelic/el5/x86_64/newrelic-repo-5-3.noarch.rpm
+RUN dnf install -y newrelic-php5
 
 #RUN chmod +x /docker-entrypoint.sh
 #RUN chmod +x /docker-install.sh
