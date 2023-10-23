@@ -2,7 +2,7 @@ FROM rockylinux:9
 MAINTAINER chankongching <chankongching@gmail.com>
 
 ENV NGINX_VERSION 1.24.0
-ENV PHP_VERSION 8.1.22
+ENV PHP_VERSION 8.2.11
 ENV REDIS_VERSION 5.3.7
 
 RUN set -x && \
@@ -191,6 +191,7 @@ RUN set -x && \
     sed -i 's/^;opcache.max_accelerated_files=.*/opcache.max_accelerated_files=4000/' /usr/local/php/etc/php.ini && \
     sed -i 's/^;opcache.revalidate_freq=.*/opcache.revalidate_freq=60/' /usr/local/php/etc/php.ini && \
     sed -i 's/^;opcache.fast_shutdown=.*/opcache.fast_shutdown=1/' /usr/local/php/etc/php.ini && \
+    sed -i 's/expose_php = On/expose_php = Off/' /usr/local/php/etc/php.ini && \
     sed -i 's/^;opcache.enable_cli=.*/opcache.enable_cli=1/' /usr/local/php/etc/php.ini
 
 # Changing php-fpm configureations
