@@ -2,7 +2,7 @@ FROM rockylinux:9
 MAINTAINER chankongching <chankongching@gmail.com>
 
 ENV NGINX_VERSION 1.24.0
-ENV PHP_VERSION 8.1.22
+ENV PHP_VERSION 8.1.25
 ENV REDIS_VERSION 5.3.7
 
 RUN set -x && \
@@ -16,6 +16,7 @@ RUN set -x && \
     libtool \
     make \
     cmake \
+    pkg-config \
     file \
     diffutils \
     findutils \
@@ -51,7 +52,9 @@ RUN set -x && \
     libcurl-devel \
     libpng-devel \
     libjpeg-devel \
+    libwebp-devel \
     freetype-devel \
+    gd-devel \
     libmcrypt-devel \
     openssh-server \
     python-setuptools \
@@ -135,7 +138,12 @@ RUN set -x && \
     --disable-rpath \
     --enable-ipv6 \
     --enable-gd \
-    --with-jpeg && \
+    --with-external-gd \
+    --with-avif \
+    --with-webp \
+    --with-jpeg \
+    --with-xpm \
+    --with-freetype && \
     make && make install
 
 #Install php-fpm
