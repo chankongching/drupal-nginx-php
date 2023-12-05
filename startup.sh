@@ -7,10 +7,8 @@ if [ ! -z ${NEWRELICKEY+x} ];
 then
   if [ ! -z ${NEWRELICAPPNAME+x} ];
   then
-    export NR_INSTALL_SILENT=true
-    /usr/bin/newrelic-install install
-    sed -i "s/newrelic.appname = .*/newrelic.appname = \"$NEWRELICAPPNAME\"/" /usr/local/php/etc/php.d/newrelic.ini
-    sed -i "s/newrelic.license = .*/newrelic.license = \"$NEWRELICKEY\"/" /usr/local/php/etc/php.d/newrelic.ini
+    NR_INSTALL_KEY=$NEWRELICKEY NR_INSTALL_SILENT=1 newrelic-install install
+    find /etc /opt/etc /usr/local/etc -type f -name newrelic.ini -exec sed -i -e "s/REPLACE_WITH_REAL_KEY/$NEWRELICKEY/" -e "s/newrelic.appname[[:space:]]=[[:space:]].*/newrelic.appname = \"$NEWRELICAPPNAME\"/" {} \; 2>/dev/null
   fi
 fi
 
