@@ -1,9 +1,11 @@
-FROM rockylinux:9
+FROM rockylinux/rockylinux:9.6.20250531
+# 拉取所有最新的安全更新
+RUN dnf update -y && dnf clean all
 MAINTAINER chankongching <chankongching@gmail.com>
 
-ENV NGINX_VERSION 1.24.0
-ENV PHP_VERSION 8.2.25
-ENV REDIS_VERSION 5.3.7
+ENV NGINX_VERSION 1.28.0
+ENV PHP_VERSION 8.3.25
+ENV REDIS_VERSION 6.2.0
 
 RUN set -x && \
     dnf install -y gcc \
