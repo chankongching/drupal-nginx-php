@@ -1,5 +1,5 @@
 FROM rockylinux/rockylinux:9.6.20250531
-# 拉取所有最新的安全更新
+# Pull all the latest security updates
 RUN dnf update -y && dnf clean all
 MAINTAINER chankongching <chankongching@gmail.com>
 
@@ -225,32 +225,17 @@ RUN set -x && \
 RUN set -x && \
     /usr/bin/pecl channel-update pecl.php.net
 #RUN yum install libxslt-devel* -y
+
 # Use pecl
 RUN set -x && \
-    /usr/bin/pecl install mcrypt igbinary xdebug &&\
-    #  echo zend_extension=/usr/local/php/lib/php/extensions/no-debug-non-zts-20170718/xdebug.so >> /usr/local/php/etc/php.ini  &&\
-    echo zend_extension=xdebug.so >> /usr/local/php/etc/php.ini &&\
+    /usr/bin/pecl install mcrypt igbinary &&\
+    # echo extension=mcrypt.so > mcrypt.ini
+    # echo zend_extension=/usr/local/php/modules/xdebug.so >> /usr/local/php/etc/php.ini
     echo extension=igbinary.so  >> /usr/local/php/etc/php.ini &&\
     echo extension=mcrypt.so  >> /usr/local/php/etc/php.ini
 
-#RUN  /etc/init.d/php-fpm restart
-#  echo extension=mcrypt.so > mcrypt.ini
- #   echo zend_extension=/usr/local/php/modules/xdebug.so >> /usr/local/php/etc/php.ini
+# RUN  /etc/init.d/php-fpm restart
 
-#Clean OS
-RUN set -x && \
-    dnf remove -y gcc \
-    gcc-c++ \
-    autoconf \
-    automake \
-    libtool \
-    make \
-    cmake && \
-    dnf clean all && \
-    rm -rf /tmp/* /var/cache/{yum,ldconfig} /etc/my.cnf{,.d} && \
-    mkdir -p --mode=0755 /var/cache/{yum,ldconfig} && \
-    find /var/log -type f -delete && \
-    rm -rf /home/nginx-php
 
 # Chaning timezone
 RUN set -x && \
@@ -296,6 +281,22 @@ RUN dnf install -y which telnet
 
 RUN rpm -Uvh http://yum.newrelic.com/pub/newrelic/el5/x86_64/newrelic-repo-5-3.noarch.rpm
 RUN dnf install -y newrelic-php5
+
+
+#Clean OS
+RUN set -x && \
+    dnf remove -y gcc \
+    gcc-c++ \
+    autoconf \
+    automake \
+    libtool \
+    make \
+    cmake && \
+    dnf clean all && \
+    rm -rf /tmp/* /var/cache/{dnf,yum,ldconfig} /etc/my.cnf{,.d} && \
+    mkdir -p --mode=0755 /var/cache/{dnf,yum,ldconfig} && \
+    find /var/log -type f -delete && \
+    rm -rf /home/nginx-php
 
 #RUN chmod +x /docker-entrypoint.sh
 #RUN chmod +x /docker-install.sh
