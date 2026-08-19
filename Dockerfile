@@ -65,13 +65,18 @@ RUN apt-get update \
     fi \
     && apt-mark auto '.*' > /dev/null \
     && apt-mark manual ${savedAptMark} \
-    && ldd "$(php -r 'echo ini_get("extension_dir");')"/*.so \
-        | awk '/=>/ { print $3 }' \
-        | sort -u \
-        | xargs -r dpkg-query -S \
-        | cut -d: -f1 \
-        | sort -u \
-        | xargs -r apt-mark manual \
+    && apt-mark manual \
+        libavif16 \
+        libfreetype6 \
+        libicu76 \
+        libjpeg62-turbo \
+        libmemcached11t64 \
+        libpng16-16t64 \
+        libwebp7 \
+        libxml2 \
+        libxslt1.1 \
+        libzip5 \
+        zlib1g \
     && apt-get purge -y --auto-remove -o APT::AutoRemove::RecommendsImportant=false \
     && rm -rf /var/lib/apt/lists/* /tmp/pear
 
