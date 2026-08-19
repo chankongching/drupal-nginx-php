@@ -50,7 +50,6 @@ RUN apt-get update \
         gd \
         intl \
         mysqli \
-        opcache \
         pcntl \
         pdo_mysql \
         soap \
