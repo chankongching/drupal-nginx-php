@@ -1,82 +1,114 @@
-Nginx and PHP for Docker
+# Drupal PHP Nginx
 
-## Last Version
-nginx: **1.11.6**   
-php:   **7.1.0**
+A production-oriented Docker image that runs **Nginx 1.30.4** and **PHP 8.5 FPM** for Drupal applications. The image replaces the legacy CentOS 7 source-build stack with maintained Debian-based official images and packages.
 
-## Docker Hub   
-**Nginx-PHP7:** [https://hub.docker.com/r/skiychan/nginx-php7](https://hub.docker.com/r/skiychan/nginx-php7)   
-   
-## Installation
-Pull the image from the docker index rather than downloading the git repo. This prevents you having to build the image on every docker host.
+| Component | Current image configuration | Notes |
+| --- | --- | --- |
+| PHP | `php:8.5-fpm-trixie` | Official PHP FPM image; the 8.5 tag receives current patch updates. |
+| Nginx | `1.30.4-1~trixie` | Current Nginx stable package from the official Nginx repository. |
+| Composer | `2.10` | Copied from the official Composer image. |
+| Drush | `13.7.6` | Installed globally for compatible Drupal projects. |
+| Redis extension | `6.3.0` | Installed via PECL. |
+| Memcached extension | `3.4.0` | Installed via PECL; includes PHP 8.5 support. |
+| Xdebug | `3.5.3` | Excluded by default; opt in for development builds only. |
+
+## What changed
+
+The old image compiled Nginx and PHP 7.2 from source on CentOS 7, which is end-of-life. It also installed unpinned dependencies through discontinued endpoints, exposed `phpinfo()` in the default page, and relied on deprecated extensions such as `mcrypt`, `xmlrpc`, `wddx`, and the old `mysql` API. The image now uses maintained packages, reproducibly pins third-party PHP extensions, removes deprecated functionality, sends logs to standard output/error, exposes a health endpoint, and keeps PHP-FPM and Nginx in the foreground under Supervisor.
+
+> **Major-version migration:** This is an intentional upgrade from PHP 7.2 to PHP 8.5. Before deploying an existing Drupal application, update Drupal core, contributed modules, themes, and Composer dependencies to versions that support PHP 8.5. Drupal 7 applications in particular need a separately validated compatibility plan.
+
+## Build
+
+Build the standard production image:
+
 ```sh
-docker pull skiychan/nginx-php7:latest
+docker build -t drupal-nginx-php:latest .
 ```
 
-To pull the Nightly Version:   
-```
-docker pull skiychan/nginx-php7:nightly
-```
+Create a development image with Xdebug enabled:
 
-## Running
-To simply run the container:
 ```sh
-docker run --name nginx -p 8080:80 -d skiychan/nginx-php7
+docker build \
+  --build-arg INSTALL_XDEBUG=true \
+  -t drupal-nginx-php:dev .
 ```
-You can then browse to http://\<docker_host\>:8080 to view the default install files.
 
-## Volumes
-If you want to link to your web site directory on the docker host to the container run:
+The build uses versioned Nginx, PECL extension, and Drush dependencies. To deliberately update a pinned package, modify the corresponding `ARG` in the `Dockerfile`, rebuild, and run the validation commands below.
+
+## Run
+
+Mount a Drupal document root at `/var/www/html`:
+
 ```sh
-docker run --name nginx -p 8080:80 -v /your_code_directory:/data/www -d skiychan/nginx-php7
+docker run --rm --name drupal-web \
+  -p 8080:80 \
+  -v "$PWD/web:/var/www/html" \
+  drupal-nginx-php:latest
 ```
 
-## Enabling SSL
+Open `http://localhost:8080` to access the application. Container readiness can be checked without loading Drupal:
+
 ```sh
-docker run -d --name=nginx \
--p 80:80 -p 443:443 \
--v your_crt_key_files:/usr/local/nginx/conf/ssl \
--e PROXY_WEB=On \
--e PROXY_CRT=your_crt_name \
--e PROXY_KEY=your_key_name \
--e PROXY_DOMAIN=your_domain \
-skiychan/nginx-php7
+curl -i http://localhost:8080/healthz
 ```
 
-## Enabling Extensions With *.so
-Add xxx.ini to folder ```/your_php_extension_ini``` and add xxx.so to folder ```/your_php_extension_file```, then run the command:   
+The expected response is **HTTP 204**.
+
+| Mount path | Purpose |
+| --- | --- |
+| `/var/www/html` | Drupal document root. |
+| `/etc/nginx/certs` | TLS certificates and keys for custom virtual hosts. |
+| `/etc/nginx/conf.d/vhost` | Additional Nginx virtual-host configuration. |
+| `/usr/local/etc/php/conf.d` | Additional PHP INI files. The legacy alias `/usr/local/php/etc/php.d` resolves here. |
+| `/var/www/phpext` | Reference location for custom extension artifacts. Build extensions into a derived image rather than compiling them at runtime. |
+
+## Included PHP extensions
+
+The image installs `bcmath`, `exif`, `gd` (with AVIF, FreeType, JPEG, and WebP), `intl`, `mysqli`, `opcache`, `pcntl`, `pdo_mysql`, `redis`, `memcached`, `soap`, `sockets`, `xsl`, and `zip`. The standard PHP extensions already bundled in the official base image remain available.
+
+Run the following command to view the actual module list in the built image:
+
 ```sh
-docker run --name nginx \
--p 8080:80 -d \
--v /your_php_extension_ini:/usr/local/php/etc/php.d \
--v /your_php_extension_file:/data/phpext \
-skiychan/nginx-php7
-```
-in xxx.ini, "zend_extension = /data/phpext/xxx.so", the zend_extension must be use ```/data/phpext/```.   
-
-## Enabling Extensions With Source
-Also, You can add the source to ```extension.sh```. Example:   
-```
-#Add extension mongodb
-curl -Lk https://pecl.php.net/get/mongodb-1.1.8.tgz | gunzip | tar x -C /home/extension && \
-cd /home/extension/mongodb-1.1.8 && \
-/usr/local/php/bin/phpize && \
-./configure --with-php-config=/usr/local/php/bin/php-config && \
-make && make install
-```
-Add ```mongodb.ini``` to folder ```extini```:   
-```
-extension=mongodb.so
+docker run --rm --entrypoint php drupal-nginx-php:latest -m
 ```
 
-You can see the **[wiki](https://github.com/skiy-dockerfile/nginx-php7/wiki/Question-&-Answer)**
+## Drupal and Nginx behavior
 
-## [ChangeLog](changelogs.md)
+Nginx routes requests through `index.php` only when no matching static file or directory exists. Direct PHP execution is limited to real files, private Drupal files are denied, sensitive repository and Composer metadata files are blocked, and static assets receive cache headers. The `/healthz` endpoint is intentionally handled by Nginx and does not invoke PHP.
 
-## Thanks
-[Legion](https://www.dwhd.org)  
+The default PHP configuration is located at `php/conf.d/99-drupal.ini`; it enables OPcache and sets conservative production defaults. FPM settings are in `php-fpm.d/zz-drupal.conf`. Override only the settings required by the deployed application through a dedicated file mounted into `/usr/local/etc/php/conf.d`.
 
-## Author
-Author: Skiychan    
-Email:  dev@skiy.net       
-Link:   https://www.skiy.net
+## Drush
+
+Drush is available on the image `PATH`:
+
+```sh
+docker run --rm \
+  -v "$PWD/web:/var/www/html" \
+  --entrypoint drush \
+  drupal-nginx-php:latest status
+```
+
+Drush compatibility depends on the mounted Drupal application's core version and Composer dependency constraints. The globally installed Drush is therefore a convenience tool; project-local Drush installed through the application's `composer.json` should take precedence in CI and production automation.
+
+## Custom extensions
+
+Use a derived Docker image for custom extensions. The current MongoDB recipe is documented in [`extfile/extension.sh`](extfile/extension.sh). Do not install compilers or run PECL in a running production container.
+
+## Validation
+
+After a build, verify the image configuration and runtime behavior:
+
+```sh
+docker run --rm --entrypoint nginx drupal-nginx-php:latest -t
+docker run --rm --entrypoint php drupal-nginx-php:latest -v
+docker run --rm --entrypoint php drupal-nginx-php:latest -m
+docker run --rm -d --name drupal-web-test -p 8080:80 drupal-nginx-php:latest
+curl -fsSI http://localhost:8080/healthz
+docker rm -f drupal-web-test
+```
+
+## References
+
+The image follows the installation and configuration guidance of the [official PHP Docker image](https://hub.docker.com/_/php), [official Nginx Docker image](https://hub.docker.com/_/nginx), [Nginx documentation](https://nginx.org/en/docs/), [Composer](https://getcomposer.org/), and [Drush](https://www.drush.org/).

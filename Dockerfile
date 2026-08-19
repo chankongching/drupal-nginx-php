@@ -1,303 +1,113 @@
-FROM centos:7
-MAINTAINER chankongching <chankongching@gmail.com>
+FROM composer:2.10 AS composer
 
-ENV NGINX_VERSION 1.15.9
-ENV PHP_VERSION 7.2.16
-ENV REDIS_VERSION 4.3.0RC2
+FROM php:8.5-fpm-trixie
 
-RUN set -x && \
-    yum install -y gcc \
-    cyrus-sasl-devel \
-    unzip \
-    wget \
-    gcc-c++ \
-    autoconf \
-    automake \
-    libtool \
-    make \
-    cmake
+LABEL org.opencontainers.image.title="Drupal PHP Nginx" \
+      org.opencontainers.image.description="Production-oriented PHP-FPM, Nginx, Composer, and Drush image for Drupal." \
+      org.opencontainers.image.source="https://github.com/chankongching/drupal-nginx-php"
 
-# Get the latest libmemcached
-RUN set -x && \
-    cd /root && \
-    wget https://launchpad.net/libmemcached/1.0/1.0.18/+download/libmemcached-1.0.18.tar.gz && \
-    tar -xvf libmemcached-1.0.18.tar.gz && \
-    cd libmemcached-1.0.18 && \
-    ./configure --disable-memcached-sasl && \
-    make && \
-    make install
+ARG NGINX_VERSION=1.30.4-1~trixie
+ARG REDIS_VERSION=6.3.0
+ARG MEMCACHED_VERSION=3.4.0
+ARG DRUSH_VERSION=13.7.6
+ARG XDEBUG_VERSION=3.5.3
+ARG INSTALL_XDEBUG=false
 
-#Install PHP library
-## libmcrypt-devel DIY
-RUN set -x && \
-    rpm -ivh http://dl.fedoraproject.org/pub/epel/6/i386/epel-release-6-8.noarch.rpm && \
-    yum install -y zlib \
-    zlib-devel \
-    re2c \
-    openssl \
-    openssl-devel \
-    pcre-devel \
-    libxml2 \
-    libxml2-devel \
-    libcurl \
-    libcurl-devel \
-    libpng-devel \
-    libjpeg-devel \
-    freetype-devel \
-    libmcrypt-devel \
-    openssh-server \
-    python-setuptools \
-    libxslt-devel* \
-    mysql
-    
-#Add user
-RUN set -x && \
-    mkdir -p /var/www/{html,phpext} && \
-    useradd -r -s /sbin/nologin -d /var/www/html -m -k no www && \
+ENV APP_USER=www \
+    APP_GROUP=www \
+    COMPOSER_ALLOW_SUPERUSER=1 \
+    COMPOSER_HOME=/opt/composer \
+    PATH="/opt/composer/vendor/bin:${PATH}"
 
-#Download nginx & php
-    mkdir -p /home/nginx-php && cd $_ && \
-    curl -Lk http://nginx.org/download/nginx-$NGINX_VERSION.tar.gz | gunzip | tar x -C /home/nginx-php && \
-    curl -Lk http://hk1.php.net/distributions/php-$PHP_VERSION.tar.gz | gunzip | tar x -C /home/nginx-php
-#    curl -Lk http://php.net/distributions/php-$PHP_VERSION.tar.gz | gunzip | tar x -C /home/nginx-php
+SHELL ["/bin/sh", "-euxc"]
 
-#Make install nginx
-RUN set -x && \
-    cd /home/nginx-php/nginx-$NGINX_VERSION && \
-    ./configure --prefix=/usr/local/nginx \
-    --user=www --group=www \
-    --error-log-path=/var/log/nginx_error.log \
-    --http-log-path=/var/log/nginx_access.log \
-    --pid-path=/var/run/nginx.pid \
-    --with-pcre \
-    --with-http_ssl_module \
-    --without-mail_pop3_module \
-    --without-mail_imap_module \
-    --with-http_gzip_static_module && \
-    make && make install
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends ca-certificates curl gnupg2 supervisor \
+    && curl -fsSL https://nginx.org/keys/nginx_signing.key | gpg --dearmor -o /usr/share/keyrings/nginx-archive-keyring.gpg \
+    && echo "deb [signed-by=/usr/share/keyrings/nginx-archive-keyring.gpg] https://nginx.org/packages/debian/ trixie nginx" > /etc/apt/sources.list.d/nginx.list \
+    && apt-get update \
+    && apt-get install -y --no-install-recommends "nginx=${NGINX_VERSION}" \
+    && apt-mark manual nginx supervisor curl ca-certificates \
+    && savedAptMark="$(apt-mark showmanual)" \
+    && apt-get install -y --no-install-recommends \
+        $PHPIZE_DEPS \
+        libavif-dev \
+        libfreetype-dev \
+        libicu-dev \
+        libjpeg62-turbo-dev \
+        libmemcached-dev \
+        libpng-dev \
+        libwebp-dev \
+        libxml2-dev \
+        libxslt1-dev \
+        libzip-dev \
+        pkg-config \
+        zlib1g-dev \
+    && docker-php-ext-configure gd --with-freetype --with-jpeg --with-webp --with-avif \
+    && docker-php-ext-install -j"$(nproc)" \
+        bcmath \
+        exif \
+        gd \
+        intl \
+        mysqli \
+        opcache \
+        pcntl \
+        pdo_mysql \
+        soap \
+        sockets \
+        xsl \
+        zip \
+    && pecl install "redis-${REDIS_VERSION}" \
+    && pecl install "memcached-${MEMCACHED_VERSION}" \
+    && docker-php-ext-enable redis memcached \
+    && if [ "${INSTALL_XDEBUG}" = "true" ]; then \
+        pecl install "xdebug-${XDEBUG_VERSION}"; \
+        docker-php-ext-enable xdebug; \
+    fi \
+    && apt-mark auto '.*' > /dev/null \
+    && apt-mark manual ${savedAptMark} \
+    && ldd "$(php -r 'echo ini_get("extension_dir");')"/*.so \
+        | awk '/=>/ { print $3 }' \
+        | sort -u \
+        | xargs -r dpkg-query -S \
+        | cut -d: -f1 \
+        | sort -u \
+        | xargs -r apt-mark manual \
+    && apt-get purge -y --auto-remove -o APT::AutoRemove::RecommendsImportant=false \
+    && rm -rf /var/lib/apt/lists/* /tmp/pear
 
-#Make install php
-RUN set -x && \
-    cd /home/nginx-php/php-$PHP_VERSION && \
-    ./configure --prefix=/usr/local/php \
-    --with-config-file-path=/usr/local/php/etc \
-    --with-config-file-scan-dir=/usr/local/php/etc/php.d \
-    --with-fpm-user=www \
-    --with-fpm-group=www \
-    --with-mcrypt=/usr/include \
-    --with-mysqli \
-    --with-pdo-mysql \
-    --with-openssl \
-    --with-gd \
-    --with-iconv \
-    --with-zlib \
-    --with-libexslt \
-    --with-gettext \
-    --with-curl \
-    --with-png-dir \
-    --with-jpeg-dir \
-    --with-freetype-dir \
-    --with-xmlrpc \
-    --with-mhash \
-    --with-gettext \
-    --with-memcached \
-    --with-exif \
-    --with-wddx \
-    --with-igbinary \
-    --with-xsl \
-    --with-mcrypt \
-    --enable-bcmath \
-    --enable-wddx \
-    --enable-fpm \
-    --enable-xml \
-    --enable-shmop \
-    --enable-sysvsem \
-    --enable-sysvmsg \
-    --enable-sysvshm \
-    --enable-xdebug \
-    --enable-inline-optimization \
-    --enable-mbregex \
-    --enable-mbstring \
-    --enable-ftp \
-    --enable-gd-native-ttf \
-    --enable-mysqlnd \
-    --enable-igbinary \
-    --enable-pcntl \
-    --enable-sockets \
-    --enable-zip \
-    --enable-soap \
-    --enable-session \
-    --enable-opcache \
-    --enable-bcmath \
-    --enable-exif \
-    --enable-xsl \
-    --enable-fileinfo \
-    --enable-mcrypt \
-    --disable-rpath \
-    --enable-ipv6 \
-    --disable-debug && \ 
-    make && make install
+COPY --from=composer /usr/bin/composer /usr/local/bin/composer
 
-#Install php-fpm
-RUN set -x && \
-    cd /home/nginx-php/php-$PHP_VERSION && \
-    cp php.ini-production /usr/local/php/etc/php.ini && \
-    cp /usr/local/php/etc/php-fpm.conf.default /usr/local/php/etc/php-fpm.conf && \
-    cp /usr/local/php/etc/php-fpm.d/www.conf.default /usr/local/php/etc/php-fpm.d/www.conf
+RUN composer global require --no-interaction --no-plugins --prefer-dist --optimize-autoloader "drush/drush:${DRUSH_VERSION}" \
+    && ln -sf /opt/composer/vendor/bin/drush /usr/local/bin/drush \
+    && groupadd --system "${APP_GROUP}" \
+    && useradd --system --gid "${APP_GROUP}" --home-dir /var/www --shell /usr/sbin/nologin "${APP_USER}" \
+    && mkdir -p /var/www/html /var/www/phpext /var/run/php /etc/nginx/certs /etc/nginx/conf.d/vhost \
+    && chown -R "${APP_USER}:${APP_GROUP}" /var/www /var/run/php \
+    && ln -s /etc/nginx /usr/local/nginx \
+    && mkdir -p /usr/local/php/etc \
+    && ln -s "${PHP_INI_DIR}/conf.d" /usr/local/php/etc/php.d \
+    && rm -f /etc/nginx/conf.d/default.conf
 
-# Enable memcache
-RUN set -x && \
-    mkdir -p /usr/local/src/php-memcache && \
-    cd /usr/local/src/php-memcache && \
-    wget https://github.com/php-memcached-dev/php-memcached/archive/php7.zip && \
-    unzip php7.zip && \
-    cd php-memcached-php7 && \
-    /usr/local/php/bin/phpize && \
-    ./configure --with-php-config=/usr/local/php/bin/php-config && \
-    # --disable-memcached-sasl && \
-    make && \
-    make install && \
-    echo "extension=memcached.so" >> /usr/local/php/etc/php.ini
+COPY php/conf.d/99-drupal.ini ${PHP_INI_DIR}/conf.d/99-drupal.ini
+COPY php-fpm.d/zz-drupal.conf /usr/local/etc/php-fpm.d/zz-drupal.conf
+COPY nginx.conf /etc/nginx/nginx.conf
+COPY supervisord.conf /etc/supervisor/supervisord.conf
+COPY startup.sh /usr/local/bin/container-start
+COPY index.php /var/www/html/index.php
+COPY extfile/ /var/www/phpext/
 
-# Enable redis
-RUN set -x && \
-    cd /root && \
-    wget https://github.com/phpredis/phpredis/archive/$REDIS_VERSION.zip -O phpredis.zip && \
-    #wget https://github.com/phpredis/phpredis/archive/master.zip -O phpredis.zip && \
-    unzip -o /root/phpredis.zip && \
-    mv /root/phpredis-* /root/phpredis && \
-    cd /root/phpredis && \
-    /usr/local/php/bin/phpize && \
-    ./configure --with-php-config=/usr/local/php/bin/php-config && \
-    make && \
-    make install && \
-    echo extension=redis.so >> /usr/local/php/etc/php.ini
+RUN chmod +x /usr/local/bin/container-start \
+    && chown -R "${APP_USER}:${APP_GROUP}" /var/www/html /var/www/phpext
 
-# Changing php.ini
-RUN set -x && \
-    sed -i 's/memory_limit = .*/memory_limit = 1024M/' /usr/local/php/etc/php.ini && \
-    sed -i 's/post_max_size = .*/post_max_size = 512M/' /usr/local/php/etc/php.ini && \
-    sed -i 's/upload_max_filesize = .*/upload_max_filesize = 512M/' /usr/local/php/etc/php.ini && \
-    sed -i 's/post_max_size = .*/post_max_size = 512M/' /usr/local/php/etc/php.ini && \
-    sed -i 's/^; max_input_vars =.*/max_input_vars =10000/' /usr/local/php/etc/php.ini && \
-    echo zend_extension=opcache.so >> /usr/local/php/etc/php.ini && \
-    sed -i 's/^;cgi.fix_pathinfo =.*/cgi.fix_pathinfo = 0;/' /usr/local/php/etc/php.ini
+VOLUME ["/var/www/html", "/etc/nginx/certs", "/etc/nginx/conf.d/vhost", "/usr/local/etc/php/conf.d", "/var/www/phpext"]
 
-# Enable opcache php.ini
-RUN set -x && \
-    sed -i 's/^;opcache.enable=.*/opcache.enable=1/' /usr/local/php/etc/php.ini && \
-    sed -i 's/^;opcache.memory_consumption=.*/opcache.memory_consumption=256/' /usr/local/php/etc/php.ini && \
-    sed -i 's/^;opcache.interned_strings_buffer=.*/opcache.interned_strings_buffer=8/' /usr/local/php/etc/php.ini && \
-    sed -i 's/^;opcache.max_accelerated_files=.*/opcache.max_accelerated_files=4000/' /usr/local/php/etc/php.ini && \
-    sed -i 's/^;opcache.revalidate_freq=.*/opcache.revalidate_freq=60/' /usr/local/php/etc/php.ini && \
-    sed -i 's/^;opcache.fast_shutdown=.*/opcache.fast_shutdown=1/' /usr/local/php/etc/php.ini && \
-    sed -i 's/^;opcache.enable_cli=.*/opcache.enable_cli=1/' /usr/local/php/etc/php.ini
-
-# Changing php-fpm configureations
-RUN set -x && \
-    sed -i 's/listen = .*/listen = \/var\/run\/php-fpm-www.sock/' /usr/local/php/etc/php-fpm.d/www.conf && \
-    sed -i 's/;listen.owner = www/listen.owner = www/' /usr/local/php/etc/php-fpm.d/www.conf && \
-    sed -i 's/;listen.group = www/listen.group = www/' /usr/local/php/etc/php-fpm.d/www.conf && \
-    sed -i 's/;listen.mode = 0660/listen.mode = 0660/' /usr/local/php/etc/php-fpm.d/www.conf
-
-#Install supervisor
-RUN set -x && \
-    easy_install supervisor && \
-    mkdir -p /var/{log/supervisor,run/{sshd,supervisord}}
-
-ENV PATH /usr/local/php/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
-
-# Install PEAR
-RUN set -x && \
-    wget http://pear.php.net/go-pear.phar && \
-    php go-pear.phar
-
-
-# Run prerequisite
-RUN yum install -y libmcrypt-devel
-RUN yum  install -y  php-pear
-
-# Update pecl
-RUN /usr/local/php/bin/pecl channel-update pecl.php.net
-#RUN yum install libxslt-devel* -y
-# Use pecl
-RUN /usr/local/php/bin/pecl install mcrypt-1.0.2 igbinary-3.0.0 pcntl-3.0.0 libxslt-devel*  php-xsl  php-mcrypt  xdebug-2.6.0 &&\
-    #  echo zend_extension=/usr/local/php/lib/php/extensions/no-debug-non-zts-20170718/xdebug.so >> /usr/local/php/etc/php.ini  &&\
-  echo zend_extension=xdebug.so >> /usr/local/php/etc/php.ini &&\
-  echo zend_extension=xsl.so >> /usr/local/php/etc/php.ini &&\
-  echo extension=igbinary.so  >> /usr/local/php/etc/php.ini &&\
-  echo extension=mcrypt.so  >> /usr/local/php/etc/php.ini 
-
-#RUN  /etc/init.d/php-fpm restart
-#  echo echo extension=mcrypt.so > mcrypt.ini
- #   echo zend_extension=/usr/local/php/modules/xdebug.so >> /usr/local/php/etc/php.ini 
-
-#Clean OS
-RUN set -x && \
-    yum remove -y gcc \
-    gcc-c++ \
-    autoconf \
-    automake \
-    libtool \
-    make \
-    cmake && \
-    yum clean all && \
-    rm -rf /tmp/* /var/cache/{yum,ldconfig} /etc/my.cnf{,.d} && \
-    mkdir -p --mode=0755 /var/cache/{yum,ldconfig} && \
-    find /var/log -type f -delete && \
-    rm -rf /home/nginx-php
-
-# Chaning timezone
-RUN set -x && \
-    unlink /etc/localtime && \
-    ln -s /usr/share/zoneinfo/Asia/Shanghai /etc/localtime
-
-#Change Mod from webdir
-RUN set -x && \
-    chown -R www:www /var/www/html
-
-# Insert supervisord conf file
-ADD supervisord.conf /etc/
-
-#Create web folder,mysql folder
-VOLUME ["/var/www/html", "/usr/local/nginx/conf/ssl", "/usr/local/nginx/conf/vhost", "/usr/local/php/etc/php.d", "/var/www/phpext"]
-
-ADD index.php /var/www/html
-
-ADD extfile/ /var/www/phpext/
-
-#Update nginx config
-ADD nginx.conf /usr/local/nginx/conf/
-
-#ADD ./scripts/docker-entrypoint.sh /docker-entrypoint.sh
-#ADD ./scripts/docker-install.sh /docker-install.sh
-
-#Start
-ADD startup.sh /var/www/startup.sh
-RUN chmod +x /var/www/startup.sh
-
-RUN set -x && \
-    curl -sS https://getcomposer.org/installer | php && \
-    mv composer.phar /usr/local/bin/composer && \
-    composer global require drush/drush:~8 && \
-    sed -i '1i export PATH="$HOME/.composer/vendor/drush/drush:$PATH"' $HOME/.bashrc && \
-    source $HOME/.bashrc
-
-RUN yum install -y which telnet
-
-# RUN rpm -Uvh http://yum.newrelic.com/pub/newrelic/el5/x86_64/newrelic-repo-5-3.noarch.rpm
-# RUN yum install -y yum install newrelic-php5
-
-#RUN chmod +x /docker-entrypoint.sh
-#RUN chmod +x /docker-install.sh
-#Set port
 EXPOSE 80 443
 
-#Start it
-ENTRYPOINT ["/var/www/startup.sh"]
+HEALTHCHECK --interval=30s --timeout=5s --start-period=15s --retries=3 \
+    CMD curl --fail --silent --show-error http://127.0.0.1/healthz || exit 1
 
-#Start web server
-#CMD ["/bin/bash", "/startup.sh"]
+ENTRYPOINT ["/usr/local/bin/container-start"]
+CMD ["/usr/bin/supervisord", "-n", "-c", "/etc/supervisor/supervisord.conf"]
 
-# Setting working directory
 WORKDIR /var/www/html
