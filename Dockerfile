@@ -51,7 +51,8 @@ RUN set -x && \
     libjpeg-turbo-devel \
     libwebp-devel \
     freetype-devel \
-    gd-devel \
+    libavif-devel \
+    libXpm-devel \
     openssh-server \
     libxslt-devel \
     sqlite-devel \
@@ -103,8 +104,8 @@ RUN set -x && \
     make && make install
 
 #Make install php
-# NOTE: --with-avif only affects PHP's bundled libgd. With --with-external-gd the GD
-# feature set (including AVIF) comes from the system libgd, which on EL 10 has no AVIF.
+# NOTE: GD is built from the libgd bundled with PHP (no --with-external-gd), so
+# --with-avif/--with-webp/--with-jpeg/--with-xpm/--with-freetype all take effect.
 RUN set -x && \
     cd /home/nginx-php/php-$PHP_VERSION && \
     ./configure --prefix=/usr/local/php \
@@ -144,7 +145,6 @@ RUN set -x && \
     --disable-rpath \
     --enable-ipv6 \
     --enable-gd \
-    --with-external-gd \
     --with-avif \
     --with-webp \
     --with-jpeg \
