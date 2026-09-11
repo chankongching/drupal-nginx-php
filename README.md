@@ -1,8 +1,8 @@
 Nginx and PHP for Docker
 
 ## Last Version
-nginx: **1.11.6**   
-php:   **7.1.0**
+nginx: **1.30.4**   
+php:   **8.5.10**
 
 ## Docker Hub   
 **Nginx-PHP7:** [https://hub.docker.com/r/skiychan/nginx-php7](https://hub.docker.com/r/skiychan/nginx-php7)   
@@ -49,10 +49,10 @@ Add xxx.ini to folder ```/your_php_extension_ini``` and add xxx.so to folder ```
 docker run --name nginx \
 -p 8080:80 -d \
 -v /your_php_extension_ini:/usr/local/php/etc/php.d \
--v /your_php_extension_file:/data/phpext \
+-v /your_php_extension_file:/var/www/phpext \
 skiychan/nginx-php7
 ```
-in xxx.ini, "zend_extension = /data/phpext/xxx.so", the zend_extension must be use ```/data/phpext/```.   
+in xxx.ini, "zend_extension = /var/www/phpext/xxx.so", the zend_extension must be use ```/var/www/phpext/```.   
 
 ## Enabling Extensions With Source
 Also, You can add the source to ```extension.sh```. Example:   

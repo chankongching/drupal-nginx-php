@@ -1,3 +1,16 @@
+**2026 / 09 / 10:**  
+upgraded base image to rockylinux 10.2 (20260525)  
+updated php to version 8.5.10  
+updated nginx to version 1.30.4 (stable)  
+updated phpredis extension to version 6.3.0  
+updated php-memcached extension to version 3.4.0  
+updated igbinary extension to version 3.2.17RC1 (first release with PHP 8.5 support)  
+updated drush to version 13  
+built oniguruma 6.9.10 from source (mbstring mbregex; not packaged in EPEL 10)  
+built libzip 1.11.4 from source (ext-zip; libzip-devel not packaged in EL 10)  
+removed mcrypt extension (abandoned, incompatible with PHP 8.5 and libmcrypt missing in EPEL 10)  
+switched supervisor install from pip to the EPEL package  
+
 **2016 / 12 / 04:**  
 updated php to version 7.1.0
 updated nginx to version 1.11.6

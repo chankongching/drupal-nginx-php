@@ -8,15 +8,15 @@
 #########################################################################
 
 #Add extension xdebug
-curl -Lk https://github.com/xdebug/xdebug/archive/XDEBUG_2_4_0RC3.tar.gz | gunzip | tar x -C /home/extension && \
-cd /home/extension/xdebug-XDEBUG_2_4_0RC3 && \
+curl -Lk https://github.com/xdebug/xdebug/archive/refs/tags/3.5.3.tar.gz | gunzip | tar x -C /home/extension && \
+cd /home/extension/xdebug-3.5.3 && \
 /usr/local/php/bin/phpize && \
 ./configure --enable-xdebug --with-php-config=/usr/local/php/bin/php-config && \
 make && make install
 
 #Add extension mongodb
-curl -Lk https://pecl.php.net/get/mongodb-1.1.8.tgz | gunzip | tar x -C /home/extension && \
-cd /home/extension/mongodb-1.1.8 && \
+curl -Lk https://pecl.php.net/get/mongodb-2.5.2.tgz | gunzip | tar x -C /home/extension && \
+cd /home/extension/mongodb-2.5.2 && \
 /usr/local/php/bin/phpize && \
 ./configure --with-php-config=/usr/local/php/bin/php-config && \
 make && make install

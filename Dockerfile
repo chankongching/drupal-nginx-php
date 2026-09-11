@@ -1,81 +1,92 @@
-FROM rockylinux/rockylinux:9.6.20250531
+FROM rockylinux/rockylinux:10.2.20260525.0
 # Pull all the latest security updates
 RUN dnf update -y && dnf clean all
-MAINTAINER chankongching <chankongching@gmail.com>
+LABEL maintainer="chankongching <chankongching@gmail.com>"
 
-ENV NGINX_VERSION 1.28.0
-ENV PHP_VERSION 8.3.25
-ENV REDIS_VERSION 6.2.0
+ENV NGINX_VERSION 1.30.4
+ENV PHP_VERSION 8.5.10
+ENV REDIS_VERSION 6.3.0
+ENV MEMCACHED_VERSION 3.4.0
+# 3.2.17RC1 is the first igbinary release with PHP 8.5 support
+ENV IGBINARY_VERSION 3.2.17RC1
+# oniguruma is required by PHP mbstring (mbregex) but is not packaged in EPEL 10
+ENV ONIGURUMA_VERSION 6.9.10
+# libzip-devel is not packaged in EL 10, so libzip is built from source for ext-zip
+ENV LIBZIP_VERSION 1.11.4
+
+# Enable EPEL (libmemcached-awesome, libavif, supervisor, re2c) and CRB
+RUN set -x && \
+    rpm -ivh https://dl.fedoraproject.org/pub/epel/epel-release-latest-10.noarch.rpm && \
+    dnf install -y dnf-plugins-core && \
+    crb enable
 
 RUN set -x && \
     dnf install -y gcc \
-    cyrus-sasl-devel \
-    unzip \
-    wget \
     gcc-c++ \
     autoconf \
     automake \
     libtool \
     make \
     cmake \
-    pkg-config \
+    pkgconf-pkg-config \
     file \
     diffutils \
     findutils \
     patch \
-    procps
-
-# # Get the latest libmemcached
-# RUN set -x && \
-#     cd /root && \
-#     wget https://launchpad.net/libmemcached/1.0/1.0.18/+download/libmemcached-1.0.18.tar.gz && \
-#     tar -xvf libmemcached-1.0.18.tar.gz && \
-#     cd libmemcached-1.0.18 && \
-#     ./configure --disable-memcached-sasl && \
-#     make && \
-#     make install
-
- RUN set -x && \
-     dnf --enablerepo=crb install -y libmemcached-awesome libmemcached-awesome-devel
+    procps-ng
 
 #Install PHP library
-## libmcrypt-devel DIY
 RUN set -x && \
-    rpm -ivh https://dl.fedoraproject.org/pub/epel/epel-release-latest-9.noarch.rpm && \
-    dnf install -y zlib \
-    zlib-devel \
+    dnf install -y zlib-ng-compat \
+    zlib-ng-compat-devel \
     re2c \
     openssl \
     openssl-devel \
-    pcre-devel \
+    pcre2-devel \
     libxml2 \
     libxml2-devel \
     libcurl --allowerasing \
     libcurl-devel \
     libpng-devel \
-    libjpeg-devel \
+    libjpeg-turbo-devel \
     libwebp-devel \
     freetype-devel \
     gd-devel \
-    libmcrypt-devel \
     openssh-server \
-    python-setuptools \
-    pip \
-    libxslt-devel* \
+    libxslt-devel \
     sqlite-devel \
-    mysql && \
-    dnf --enablerepo=crb install -y oniguruma-devel
+    mariadb \
+    libmemcached-awesome \
+    libmemcached-awesome-devel \
+    cyrus-sasl-devel \
+    unzip \
+    wget \
+    which \
+    telnet \
+    supervisor \
+    php-pear
 
-#Add user
+# Build oniguruma (mbstring mbregex) and libzip (ext-zip) from source
+RUN set -x && \
+    mkdir -p /home/nginx-php && cd /home/nginx-php && \
+    curl -Lk https://github.com/kkos/oniguruma/releases/download/v$ONIGURUMA_VERSION/onig-$ONIGURUMA_VERSION.tar.gz | gunzip | tar x && \
+    cd onig-$ONIGURUMA_VERSION && \
+    ./configure --prefix=/usr && \
+    make && make install && \
+    cd /home/nginx-php && \
+    curl -Lk https://github.com/nih-at/libzip/releases/download/v$LIBZIP_VERSION/libzip-$LIBZIP_VERSION.tar.gz | gunzip | tar x && \
+    cd libzip-$LIBZIP_VERSION && \
+    mkdir build && cd build && \
+    cmake -DCMAKE_INSTALL_PREFIX=/usr -DCMAKE_BUILD_TYPE=Release .. && \
+    make && make install
+
+#Add user, then download nginx & php
 RUN set -x && \
     mkdir -p /var/www/{html,phpext} && \
     useradd -r -s /sbin/nologin -d /var/www/html -m -k no www && \
-
-#Download nginx & php
-    mkdir -p /home/nginx-php && cd $_ && \
-    curl -Lk http://nginx.org/download/nginx-$NGINX_VERSION.tar.gz | gunzip | tar x -C /home/nginx-php && \
-    curl -Lk http://hk1.php.net/distributions/php-$PHP_VERSION.tar.gz | gunzip | tar x -C /home/nginx-php
-#    curl -Lk http://php.net/distributions/php-$PHP_VERSION.tar.gz | gunzip | tar x -C /home/nginx-php
+    mkdir -p /home/nginx-php && cd /home/nginx-php && \
+    curl -Lk https://nginx.org/download/nginx-$NGINX_VERSION.tar.gz | gunzip | tar x -C /home/nginx-php && \
+    curl -Lk https://www.php.net/distributions/php-$PHP_VERSION.tar.gz | gunzip | tar x -C /home/nginx-php
 
 #Make install nginx
 RUN set -x && \
@@ -85,7 +96,6 @@ RUN set -x && \
     --error-log-path=/var/log/nginx_error.log \
     --http-log-path=/var/log/nginx_access.log \
     --pid-path=/var/run/nginx.pid \
-    --with-pcre \
     --with-http_ssl_module \
     --without-mail_pop3_module \
     --without-mail_imap_module \
@@ -93,6 +103,8 @@ RUN set -x && \
     make && make install
 
 #Make install php
+# NOTE: --with-avif only affects PHP's bundled libgd. With --with-external-gd the GD
+# feature set (including AVIF) comes from the system libgd, which on EL 10 has no AVIF.
 RUN set -x && \
     cd /home/nginx-php/php-$PHP_VERSION && \
     ./configure --prefix=/usr/local/php \
@@ -107,13 +119,7 @@ RUN set -x && \
     --with-zlib \
     --with-gettext \
     --with-curl \
-    # --with-xmlrpc \
-    # --enable-wddx \
     --with-mhash \
-    # --with-memcached \
-    # --with-igbinary \
-    # --with-mcrypt \
-    # --enable-xdebug \
     --with-xsl \
     --without-pear \
     --enable-bcmath \
@@ -129,13 +135,11 @@ RUN set -x && \
     --enable-mysqlnd \
     --enable-pcntl \
     --enable-sockets \
-    --enable-zip \
+    --with-zip \
     --enable-soap \
     --enable-session \
     --enable-opcache \
-    --enable-bcmath \
     --enable-exif \
-    --with-xsl \
     --enable-fileinfo \
     --disable-rpath \
     --enable-ipv6 \
@@ -155,16 +159,27 @@ RUN set -x && \
     cp /usr/local/php/etc/php-fpm.conf.default /usr/local/php/etc/php-fpm.conf && \
     cp /usr/local/php/etc/php-fpm.d/www.conf.default /usr/local/php/etc/php-fpm.d/www.conf
 
+# Enable igbinary
+RUN set -x && \
+    mkdir -p /usr/local/src/php-igbinary && \
+    cd /usr/local/src/php-igbinary && \
+    curl -Lk https://github.com/igbinary/igbinary/archive/refs/tags/$IGBINARY_VERSION.tar.gz | gunzip | tar x && \
+    cd igbinary-$IGBINARY_VERSION && \
+    /usr/local/php/bin/phpize && \
+    ./configure --with-php-config=/usr/local/php/bin/php-config && \
+    make && \
+    make install && \
+    echo "extension=igbinary.so" >> /usr/local/php/etc/php.ini
+
 # Enable memcache
 RUN set -x && \
     mkdir -p /usr/local/src/php-memcache && \
     cd /usr/local/src/php-memcache && \
-    wget https://github.com/php-memcached-dev/php-memcached/archive/refs/tags/v3.2.0.zip && \
-    unzip v3.2.0.zip && \
-    cd php-memcached-3.2.0 && \
+    wget https://github.com/php-memcached-dev/php-memcached/archive/refs/tags/v$MEMCACHED_VERSION.zip && \
+    unzip v$MEMCACHED_VERSION.zip && \
+    cd php-memcached-$MEMCACHED_VERSION && \
     /usr/local/php/bin/phpize && \
     ./configure --with-php-config=/usr/local/php/bin/php-config && \
-    # --disable-memcached-sasl && \
     make && \
     make install && \
     echo "extension=memcached.so" >> /usr/local/php/etc/php.ini
@@ -173,7 +188,6 @@ RUN set -x && \
 RUN set -x && \
     cd /root && \
     wget https://github.com/phpredis/phpredis/archive/$REDIS_VERSION.zip -O phpredis.zip && \
-    #wget https://github.com/phpredis/phpredis/archive/master.zip -O phpredis.zip && \
     unzip -o /root/phpredis.zip && \
     mv /root/phpredis-* /root/phpredis && \
     cd /root/phpredis && \
@@ -184,13 +198,14 @@ RUN set -x && \
     echo extension=redis.so >> /usr/local/php/etc/php.ini
 
 # Changing php.ini
+# NOTE: opcache is compiled statically into PHP 8.5 (--enable-opcache), so it must
+# not be added again as a zend_extension (that would emit "Failed loading opcache.so").
 RUN set -x && \
     sed -i 's/memory_limit = .*/memory_limit = -1/' /usr/local/php/etc/php.ini && \
     sed -i 's/post_max_size = .*/post_max_size = 512M/' /usr/local/php/etc/php.ini && \
     sed -i 's/upload_max_filesize = .*/upload_max_filesize = 512M/' /usr/local/php/etc/php.ini && \
     sed -i 's/post_max_size = .*/post_max_size = 512M/' /usr/local/php/etc/php.ini && \
     sed -i 's/^; max_input_vars =.*/max_input_vars =10000/' /usr/local/php/etc/php.ini && \
-    echo zend_extension=opcache.so >> /usr/local/php/etc/php.ini && \
     sed -i 's/^;cgi.fix_pathinfo =.*/cgi.fix_pathinfo = 0;/' /usr/local/php/etc/php.ini
 
 # Enable opcache php.ini
@@ -210,32 +225,15 @@ RUN set -x && \
     sed -i 's/;listen.group = www/listen.group = www/' /usr/local/php/etc/php-fpm.d/www.conf && \
     sed -i 's/;listen.mode = 0660/listen.mode = 0660/' /usr/local/php/etc/php-fpm.d/www.conf
 
-#Install supervisor
+# Install supervisor (from EPEL)
 RUN set -x && \
-    pip install supervisor && \
     mkdir -p /var/{log/supervisor,run/{sshd,supervisord}}
 
 ENV PATH /usr/local/php/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/root/.config/composer/vendor/bin
 
-# Run prerequisite
-RUN set -x && \
-    dnf  install -y php-pear
-
 # Update pecl
 RUN set -x && \
     /usr/bin/pecl channel-update pecl.php.net
-#RUN yum install libxslt-devel* -y
-
-# Use pecl
-RUN set -x && \
-    /usr/bin/pecl install mcrypt igbinary &&\
-    # echo extension=mcrypt.so > mcrypt.ini
-    # echo zend_extension=/usr/local/php/modules/xdebug.so >> /usr/local/php/etc/php.ini
-    echo extension=igbinary.so  >> /usr/local/php/etc/php.ini &&\
-    echo extension=mcrypt.so  >> /usr/local/php/etc/php.ini
-
-# RUN  /etc/init.d/php-fpm restart
-
 
 # Chaning timezone
 RUN set -x && \
@@ -259,27 +257,23 @@ ADD extfile/ /var/www/phpext/
 #Update nginx config
 ADD nginx.conf /usr/local/nginx/conf/
 
-#ADD ./scripts/docker-entrypoint.sh /docker-entrypoint.sh
-#ADD ./scripts/docker-install.sh /docker-install.sh
-
 #Start
 ADD startup.sh /var/www/startup.sh
 RUN chmod +x /var/www/startup.sh
 
+ENV COMPOSER_ALLOW_SUPERUSER 1
 RUN set -x && \
     curl -sS https://getcomposer.org/installer | php && \
     mv composer.phar /usr/local/bin/composer && \
-    composer global require drush/drush:~10 && \
-    sed -i '1i export PATH="$HOME/.composer/vendor/drush/drush:$PATH"' $HOME/.bashrc && \
-    sed -i '1i unset which' $HOME/.bashrc && \
-    source $HOME/.bashrc
+    composer global require drush/drush:^13 && \
+    echo 'export PATH="$HOME/.config/composer/vendor/bin:$PATH"' >> $HOME/.bashrc
 
 # Update Composer
 RUN /usr/local/bin/composer self-update --2
 
-RUN dnf install -y which telnet
-
-RUN rpm -Uvh http://yum.newrelic.com/pub/newrelic/el5/x86_64/newrelic-repo-5-3.noarch.rpm
+RUN rpm -Uvh https://yum.newrelic.com/pub/newrelic/el5/x86_64/newrelic-repo-5-3.noarch.rpm
+# New Relic rotated their RPM signing key in March 2026; the new key must be imported
+RUN rpm --import https://download.newrelic.com/php_agent/NEWRELIC_RPM_BD2E199C.public
 RUN dnf install -y newrelic-php5
 
 
@@ -296,18 +290,13 @@ RUN set -x && \
     rm -rf /tmp/* /var/cache/{dnf,yum,ldconfig} /etc/my.cnf{,.d} && \
     mkdir -p --mode=0755 /var/cache/{dnf,yum,ldconfig} && \
     find /var/log -type f -delete && \
-    rm -rf /home/nginx-php
+    rm -rf /home/nginx-php /usr/local/src/php-igbinary /usr/local/src/php-memcache /root/phpredis /root/phpredis.zip
 
-#RUN chmod +x /docker-entrypoint.sh
-#RUN chmod +x /docker-install.sh
 #Set port
 EXPOSE 80 443
 
 #Start it
 ENTRYPOINT ["/var/www/startup.sh"]
-
-#Start web server
-#CMD ["/bin/bash", "/startup.sh"]
 
 # Setting working directory
 WORKDIR /var/www/html
