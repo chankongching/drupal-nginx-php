@@ -106,6 +106,8 @@ RUN set -x && \
 #Make install php
 # NOTE: GD is built from the libgd bundled with PHP (no --with-external-gd), so
 # --with-avif/--with-webp/--with-jpeg/--with-xpm/--with-freetype all take effect.
+# NOTE: --enable-opcache is omitted because opcache is always built into PHP since 8.5,
+# and --with-mhash is omitted because it has been deprecated since PHP 8.1.
 RUN set -x && \
     cd /home/nginx-php/php-$PHP_VERSION && \
     ./configure --prefix=/usr/local/php \
@@ -120,7 +122,6 @@ RUN set -x && \
     --with-zlib \
     --with-gettext \
     --with-curl \
-    --with-mhash \
     --with-xsl \
     --without-pear \
     --enable-bcmath \
@@ -139,7 +140,6 @@ RUN set -x && \
     --with-zip \
     --enable-soap \
     --enable-session \
-    --enable-opcache \
     --enable-exif \
     --enable-fileinfo \
     --disable-rpath \
@@ -198,7 +198,7 @@ RUN set -x && \
     echo extension=redis.so >> /usr/local/php/etc/php.ini
 
 # Changing php.ini
-# NOTE: opcache is compiled statically into PHP 8.5 (--enable-opcache), so it must
+# NOTE: opcache is always built into PHP since 8.5 and is always loaded, so it must
 # not be added again as a zend_extension (that would emit "Failed loading opcache.so").
 RUN set -x && \
     sed -i 's/memory_limit = .*/memory_limit = -1/' /usr/local/php/etc/php.ini && \
