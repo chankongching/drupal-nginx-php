@@ -1,3 +1,29 @@
+**2026 / 10 / 22:**  
+updated php to version 8.3.36 (fixes the critical RCE vulnerabilities CVE-2026-109618 and CVE-2026-109619)  
+updated nginx to version 1.30.6  
+aligned the php 8.3 build with the 8.4/8.5 branches: rockylinux 10.2 base, source-built oniguruma/libzip, bundled GD with AVIF, supervisor from EPEL, drush 13  
+updated phpredis to version 6.3.0 and php-memcached to version 3.4.0  
+updated igbinary extension to the latest stable version 3.2.16 (PHP 8.3/8.4 support)  
+re-enabled opcache with --enable-opcache, built as a shared extension and loaded via zend_extension=opcache.so (opcache is only built in by default since PHP 8.5)  
+removed php-pear and the `pecl channel-update` step: PEAR is no longer maintained, and PEAR 1.10 cannot parse the chunked HTTP response pecl.php.net now returns, which broke the build  
+removed the mcrypt extension (abandoned, not available in EPEL 10)  
+xdebug is now built from source in extfile/xdebug.sh instead of with `pecl install`  
+
+**2026 / 09 / 10:**  
+upgraded base image to rockylinux 10.2 (20260525)  
+updated php to version 8.5.10  
+updated nginx to version 1.30.4 (stable)  
+updated phpredis extension to version 6.3.0  
+updated php-memcached extension to version 3.4.0  
+updated igbinary extension to version 3.2.17RC1 (first release with PHP 8.5 support)  
+updated drush to version 13  
+built oniguruma 6.9.10 from source (mbstring mbregex; not packaged in EPEL 10)  
+built libzip 1.11.4 from source (ext-zip; libzip-devel not packaged in EL 10)  
+removed mcrypt extension (abandoned, incompatible with PHP 8.5 and libmcrypt missing in EPEL 10)  
+switched supervisor install from pip to the EPEL package  
+switched GD from the system libgd to the libgd bundled with PHP, enabling AVIF support  
+dropped obsolete configure flags --enable-opcache (always built in since PHP 8.5) and --with-mhash (deprecated since PHP 8.1)  
+
 **2016 / 12 / 04:**  
 updated php to version 7.1.0
 updated nginx to version 1.11.6

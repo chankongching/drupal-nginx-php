@@ -13,7 +13,7 @@ then
 fi
 
 set -e
-chown -R www.www $DATA_DIR
+chown -R www:www $DATA_DIR
 #/docker-entrypoint.sh
 
-/usr/local/bin/supervisord -n -c /etc/supervisord.conf
+/usr/bin/supervisord -n -c /etc/supervisord.conf
