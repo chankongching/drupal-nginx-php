@@ -1,9 +1,10 @@
 **2026 / 10 / 22:**  
-updated php to version 8.3.36 (fixes the critical RCE vulnerabilities CVE-2026-109618 and CVE-2026-109619)  
+updated php to version 8.2.35 (fixes the critical RCE vulnerabilities CVE-2026-109618 and CVE-2026-109619)  
+note: php 8.2 reaches end of life on 2026-12-31, plan the upgrade to a supported version  
 updated nginx to version 1.30.6  
-aligned the php 8.3 build with the 8.4/8.5 branches: rockylinux 10.2 base, source-built oniguruma/libzip, bundled GD with AVIF, supervisor from EPEL, drush 13  
+aligned the php 8.2 build with the 8.3/8.4/8.5 branches: rockylinux 10.2 base, source-built oniguruma/libzip, bundled GD with AVIF, supervisor from EPEL, drush 13  
 updated phpredis to version 6.3.0 and php-memcached to version 3.4.0  
-updated igbinary extension to the latest stable version 3.2.16 (PHP 8.3/8.4 support)  
+updated igbinary extension to the latest stable version 3.2.16 (PHP 8.2/8.3/8.4 support)  
 re-enabled opcache with --enable-opcache, built as a shared extension and loaded via zend_extension=opcache.so (opcache is only built in by default since PHP 8.5)  
 removed php-pear and the `pecl channel-update` step: PEAR is no longer maintained, and PEAR 1.10 cannot parse the chunked HTTP response pecl.php.net now returns, which broke the build  
 removed the mcrypt extension (abandoned, not available in EPEL 10)  
