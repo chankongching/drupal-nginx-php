@@ -64,8 +64,7 @@ RUN set -x && \
     wget \
     which \
     telnet \
-    supervisor \
-    php-pear
+    supervisor
 
 # Build oniguruma (mbstring mbregex) and libzip (ext-zip) from source
 RUN set -x && \
@@ -230,10 +229,6 @@ RUN set -x && \
     mkdir -p /var/{log/supervisor,run/{sshd,supervisord}}
 
 ENV PATH /usr/local/php/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/root/.config/composer/vendor/bin
-
-# Update pecl
-RUN set -x && \
-    /usr/bin/pecl channel-update pecl.php.net
 
 # Chaning timezone
 RUN set -x && \
