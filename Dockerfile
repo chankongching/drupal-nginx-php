@@ -4,11 +4,11 @@ RUN dnf update -y && dnf clean all
 LABEL maintainer="chankongching <chankongching@gmail.com>"
 
 ENV NGINX_VERSION 1.30.6
-ENV PHP_VERSION 8.5.12
+ENV PHP_VERSION 8.4.27
 ENV REDIS_VERSION 6.3.0
 ENV MEMCACHED_VERSION 3.4.0
-# 3.2.17RC1 is the first igbinary release with PHP 8.5 support
-ENV IGBINARY_VERSION 3.2.17RC1
+# 3.2.16 is the latest stable igbinary release with PHP 8.4 support
+ENV IGBINARY_VERSION 3.2.16
 # oniguruma is required by PHP mbstring (mbregex) but is not packaged in EPEL 10
 ENV ONIGURUMA_VERSION 6.9.10
 # libzip-devel is not packaged in EL 10, so libzip is built from source for ext-zip
@@ -105,8 +105,9 @@ RUN set -x && \
 #Make install php
 # NOTE: GD is built from the libgd bundled with PHP (no --with-external-gd), so
 # --with-avif/--with-webp/--with-jpeg/--with-xpm/--with-freetype all take effect.
-# NOTE: --enable-opcache is omitted because opcache is always built into PHP since 8.5,
-# and --with-mhash is omitted because it has been deprecated since PHP 8.1.
+# NOTE: --with-mhash is omitted because it has been deprecated since PHP 8.1.
+# NOTE: on PHP 8.4 opcache is not built in, --enable-opcache builds it as a shared
+# extension (opcache.so) that is loaded via zend_extension below.
 RUN set -x && \
     cd /home/nginx-php/php-$PHP_VERSION && \
     ./configure --prefix=/usr/local/php \
@@ -132,6 +133,7 @@ RUN set -x && \
     --enable-sysvshm \
     --enable-mbregex \
     --enable-mbstring \
+    --enable-opcache \
     --enable-ftp \
     --enable-mysqlnd \
     --enable-pcntl \
@@ -197,8 +199,8 @@ RUN set -x && \
     echo extension=redis.so >> /usr/local/php/etc/php.ini
 
 # Changing php.ini
-# NOTE: opcache is always built into PHP since 8.5 and is always loaded, so it must
-# not be added again as a zend_extension (that would emit "Failed loading opcache.so").
+# NOTE: opcache is a shared extension on PHP 8.4, so it is loaded with
+# zend_extension=opcache.so in the opcache step below.
 RUN set -x && \
     sed -i 's/memory_limit = .*/memory_limit = -1/' /usr/local/php/etc/php.ini && \
     sed -i 's/post_max_size = .*/post_max_size = 512M/' /usr/local/php/etc/php.ini && \
@@ -207,8 +209,9 @@ RUN set -x && \
     sed -i 's/^; max_input_vars =.*/max_input_vars =10000/' /usr/local/php/etc/php.ini && \
     sed -i 's/^;cgi.fix_pathinfo =.*/cgi.fix_pathinfo = 0;/' /usr/local/php/etc/php.ini
 
-# Enable opcache php.ini
+# Enable opcache php.ini (opcache is built as a shared extension on PHP 8.4)
 RUN set -x && \
+    echo "zend_extension=opcache.so" >> /usr/local/php/etc/php.ini && \
     sed -i 's/^;opcache.enable=.*/opcache.enable=1/' /usr/local/php/etc/php.ini && \
     sed -i 's/^;opcache.memory_consumption=.*/opcache.memory_consumption=256/' /usr/local/php/etc/php.ini && \
     sed -i 's/^;opcache.interned_strings_buffer=.*/opcache.interned_strings_buffer=8/' /usr/local/php/etc/php.ini && \

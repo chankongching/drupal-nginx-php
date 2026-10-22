@@ -1,6 +1,8 @@
 **2026 / 10 / 22:**  
-updated php to version 8.5.12 (fixes the critical RCE vulnerabilities CVE-2026-109618 and CVE-2026-109619)  
+updated php to version 8.4.27 (fixes the critical RCE vulnerabilities CVE-2026-109618 and CVE-2026-109619)  
 updated nginx to version 1.30.6  
+updated igbinary extension to the latest stable version 3.2.16 (PHP 8.4 support)  
+re-enabled opcache with --enable-opcache, built as a shared extension and loaded via zend_extension=opcache.so (opcache is only built in by default since PHP 8.5)  
 removed php-pear and the `pecl channel-update` step: PEAR is no longer maintained, and PEAR 1.10 cannot parse the chunked HTTP response pecl.php.net now returns, which broke the build  
 xdebug is now built from source in extfile/xdebug.sh instead of with `pecl install`  
 
