@@ -3,8 +3,8 @@ FROM rockylinux/rockylinux:10.2.20260525.0
 RUN dnf update -y && dnf clean all
 LABEL maintainer="chankongching <chankongching@gmail.com>"
 
-ENV NGINX_VERSION 1.30.4
-ENV PHP_VERSION 8.5.10
+ENV NGINX_VERSION 1.30.6
+ENV PHP_VERSION 8.5.12
 ENV REDIS_VERSION 6.3.0
 ENV MEMCACHED_VERSION 3.4.0
 # 3.2.17RC1 is the first igbinary release with PHP 8.5 support
