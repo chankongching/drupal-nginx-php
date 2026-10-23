@@ -2,6 +2,7 @@
 updated php to version 8.5.12 (fixes the critical RCE vulnerabilities CVE-2026-109618 and CVE-2026-109619)  
 updated nginx to version 1.30.6  
 removed php-pear and the `pecl channel-update` step: PEAR is no longer maintained, and PEAR 1.10 cannot parse the chunked HTTP response pecl.php.net now returns, which broke the build  
+removed the global drush install: Drush 13+ requires a site-local install, the `drush` command now only prints help for installing/calling the project's vendor/bin/drush  
 xdebug is now built from source in extfile/xdebug.sh instead of with `pecl install`  
 
 **2026 / 09 / 10:**  

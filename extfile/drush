@@ -1,0 +1,25 @@
+#!/bin/sh
+# Drush 13+ requires a site-local install (vendor/bin/drush); a global Drush can
+# no longer bootstrap a Drupal site. This shim does not run Drush at all, it only
+# prints how to install and call the project-local Drush.
+cat >&2 <<'EOF'
+drush is not installed globally in this image.
+
+Drush 13+ must be installed in your Drupal project and called from there:
+
+  1) Install Drush once in the project:
+       cd /var/www/html
+       composer require drush/drush
+
+  2) Call the project-local Drush directly:
+       vendor/bin/drush status
+
+  3) Or add the project's vendor/bin to PATH for the current shell:
+       cd /var/www/html
+       export PATH="$PWD/vendor/bin:$PATH"
+       drush status
+
+The PATH change only applies to the current shell session; run it again in every
+new shell (or keep calling vendor/bin/drush directly).
+EOF
+exit 127

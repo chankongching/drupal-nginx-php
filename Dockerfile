@@ -228,7 +228,7 @@ RUN set -x && \
 RUN set -x && \
     mkdir -p /var/{log/supervisor,run/{sshd,supervisord}}
 
-ENV PATH /usr/local/php/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/root/.config/composer/vendor/bin
+ENV PATH /usr/local/php/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
 
 # Chaning timezone
 RUN set -x && \
@@ -259,9 +259,12 @@ RUN chmod +x /var/www/startup.sh
 ENV COMPOSER_ALLOW_SUPERUSER 1
 RUN set -x && \
     curl -sS https://getcomposer.org/installer | php && \
-    mv composer.phar /usr/local/bin/composer && \
-    composer global require drush/drush:^13 && \
-    echo 'export PATH="$HOME/.config/composer/vendor/bin:$PATH"' >> $HOME/.bashrc
+    mv composer.phar /usr/local/bin/composer
+
+# Drush 13+ requires a site-local install; this shim only prints usage help
+# (it does not run drush). See extfile/drush.
+ADD extfile/drush /usr/local/bin/drush
+RUN chmod +x /usr/local/bin/drush
 
 # Update Composer
 RUN /usr/local/bin/composer self-update --2
